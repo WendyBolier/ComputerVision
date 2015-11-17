@@ -59,3 +59,4 @@ Prac1/*.opensdf
 Prac1/*.sdf
 Prac1/*.suo
 *.sdf
+Prac1/out_camera_data.xml

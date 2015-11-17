@@ -6,6 +6,7 @@
 #include <sstream>
 #include <time.h>
 #include <stdio.h>
+#include <sys/stat.h>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -203,10 +204,16 @@ private:
 
 static void read(const FileNode& node, Settings& x, const Settings& default_value = Settings())
 {
-    if(node.empty())
-        x = default_value;
-    else
-        x.read(node);
+	//TODO: pas op, hier kan het fout gaan
+    if(!node.empty())
+		x.read(node);
+    /*else
+		x = default_value;*/
+}
+
+inline bool fileExists(const std::string& name) {
+	struct stat buffer;
+	return (stat(name.c_str(), &buffer) == 0);
 }
 
 enum { DETECTION = 0, CAPTURING = 1, CALIBRATED = 2 };
@@ -241,6 +248,11 @@ int main(int argc, char* argv[])
     clock_t prevTimestamp = 0;
     const Scalar RED(0,0,255), GREEN(0,255,0);
     const char ESC_KEY = 27;
+
+	if (fileExists(s.outputFileName)) {
+		//TODO: Load the saved data
+		mode = CALIBRATED;
+	}
 
     for(int i = 0;;++i)
     {
@@ -336,6 +348,8 @@ int main(int argc, char* argv[])
         {
             Mat temp = view.clone();
             undistort(temp, view, cameraMatrix, distCoeffs);
+
+			//TODO: assenstelsel tekenen en kubus tekenen
         }
 
         //------------------------------ Show image and check for input commands -------------------
@@ -461,82 +475,148 @@ static bool runCalibration( Settings& s, Size& imageSize, Mat& cameraMatrix, Mat
 }
 
 // Print camera parameters to the output file
-static void saveCameraParams( Settings& s, Size& imageSize, Mat& cameraMatrix, Mat& distCoeffs,
-                              const vector<Mat>& rvecs, const vector<Mat>& tvecs,
-                              const vector<float>& reprojErrs, const vector<vector<Point2f> >& imagePoints,
-                              double totalAvgErr )
+static void saveCameraParams(Settings& s, Size& imageSize, Mat& cameraMatrix, Mat& distCoeffs,
+	const vector<Mat>& rvecs, const vector<Mat>& tvecs,
+	const vector<float>& reprojErrs, const vector<vector<Point2f> >& imagePoints,
+	double totalAvgErr)
 {
-    FileStorage fs( s.outputFileName, FileStorage::WRITE );
+	FileStorage fs(s.outputFileName, FileStorage::WRITE);
 
-    time_t tm;
-    time( &tm );
-    struct tm *t2 = localtime( &tm );
-    char buf[1024];
-    strftime( buf, sizeof(buf)-1, "%c", t2 );
+	time_t tm;
+	time(&tm);
+	struct tm *t2 = localtime(&tm);
+	char buf[1024];
+	strftime(buf, sizeof(buf)-1, "%c", t2);
 
-    fs << "calibration_Time" << buf;
+	fs << "calibration_Time" << buf;
 
-    if( !rvecs.empty() || !reprojErrs.empty() )
-        fs << "nrOfFrames" << (int)std::max(rvecs.size(), reprojErrs.size());
-    fs << "image_Width" << imageSize.width;
-    fs << "image_Height" << imageSize.height;
-    fs << "board_Width" << s.boardSize.width;
-    fs << "board_Height" << s.boardSize.height;
-    fs << "square_Size" << s.squareSize;
+	if (!rvecs.empty() || !reprojErrs.empty())
+		fs << "nrOfFrames" << (int)std::max(rvecs.size(), reprojErrs.size());
+	fs << "image_Width" << imageSize.width;
+	fs << "image_Height" << imageSize.height;
+	fs << "board_Width" << s.boardSize.width;
+	fs << "board_Height" << s.boardSize.height;
+	fs << "square_Size" << s.squareSize;
 
-    if( s.flag & CV_CALIB_FIX_ASPECT_RATIO )
-        fs << "FixAspectRatio" << s.aspectRatio;
+	if (s.flag & CV_CALIB_FIX_ASPECT_RATIO)
+		fs << "FixAspectRatio" << s.aspectRatio;
 
-    if( s.flag )
-    {
-        sprintf( buf, "flags: %s%s%s%s",
-            s.flag & CV_CALIB_USE_INTRINSIC_GUESS ? " +use_intrinsic_guess" : "",
-            s.flag & CV_CALIB_FIX_ASPECT_RATIO ? " +fix_aspectRatio" : "",
-            s.flag & CV_CALIB_FIX_PRINCIPAL_POINT ? " +fix_principal_point" : "",
-            s.flag & CV_CALIB_ZERO_TANGENT_DIST ? " +zero_tangent_dist" : "" );
-        cvWriteComment( *fs, buf, 0 );
+	if (s.flag)
+	{
+		sprintf(buf, "flags: %s%s%s%s",
+			s.flag & CV_CALIB_USE_INTRINSIC_GUESS ? " +use_intrinsic_guess" : "",
+			s.flag & CV_CALIB_FIX_ASPECT_RATIO ? " +fix_aspectRatio" : "",
+			s.flag & CV_CALIB_FIX_PRINCIPAL_POINT ? " +fix_principal_point" : "",
+			s.flag & CV_CALIB_ZERO_TANGENT_DIST ? " +zero_tangent_dist" : "");
+		cvWriteComment(*fs, buf, 0);
 
-    }
+	}
 
-    fs << "flagValue" << s.flag;
+	fs << "flagValue" << s.flag;
 
-    fs << "Camera_Matrix" << cameraMatrix;
-    fs << "Distortion_Coefficients" << distCoeffs;
+	fs << "Camera_Matrix" << cameraMatrix;
+	fs << "Distortion_Coefficients" << distCoeffs;
 
-    fs << "Avg_Reprojection_Error" << totalAvgErr;
-    if( !reprojErrs.empty() )
-        fs << "Per_View_Reprojection_Errors" << Mat(reprojErrs);
+	fs << "Avg_Reprojection_Error" << totalAvgErr;
+	if (!reprojErrs.empty())
+		fs << "Per_View_Reprojection_Errors" << Mat(reprojErrs);
 
-    if( !rvecs.empty() && !tvecs.empty() )
-    {
-        CV_Assert(rvecs[0].type() == tvecs[0].type());
-        Mat bigmat((int)rvecs.size(), 6, rvecs[0].type());
-        for( int i = 0; i < (int)rvecs.size(); i++ )
-        {
-            Mat r = bigmat(Range(i, i+1), Range(0,3));
-            Mat t = bigmat(Range(i, i+1), Range(3,6));
+	if (!rvecs.empty() && !tvecs.empty())
+	{
+		CV_Assert(rvecs[0].type() == tvecs[0].type());
+		Mat bigmat((int)rvecs.size(), 6, rvecs[0].type());
+		for (int i = 0; i < (int)rvecs.size(); i++)
+		{
+			Mat r = bigmat(Range(i, i + 1), Range(0, 3));
+			Mat t = bigmat(Range(i, i + 1), Range(3, 6));
 
-            CV_Assert(rvecs[i].rows == 3 && rvecs[i].cols == 1);
-            CV_Assert(tvecs[i].rows == 3 && tvecs[i].cols == 1);
-            //*.t() is MatExpr (not Mat) so we can use assignment operator
-            r = rvecs[i].t();
-            t = tvecs[i].t();
-        }
-        cvWriteComment( *fs, "a set of 6-tuples (rotation vector + translation vector) for each view", 0 );
-        fs << "Extrinsic_Parameters" << bigmat;
-    }
+			CV_Assert(rvecs[i].rows == 3 && rvecs[i].cols == 1);
+			CV_Assert(tvecs[i].rows == 3 && tvecs[i].cols == 1);
+			//*.t() is MatExpr (not Mat) so we can use assignment operator
+			r = rvecs[i].t();
+			t = tvecs[i].t();
+		}
+		cvWriteComment(*fs, "a set of 6-tuples (rotation vector + translation vector) for each view", 0);
+		fs << "Extrinsic_Parameters" << bigmat;
+	}
 
-    if( !imagePoints.empty() )
-    {
-        Mat imagePtMat((int)imagePoints.size(), (int)imagePoints[0].size(), CV_32FC2);
-        for( int i = 0; i < (int)imagePoints.size(); i++ )
-        {
-            Mat r = imagePtMat.row(i).reshape(2, imagePtMat.cols);
-            Mat imgpti(imagePoints[i]);
-            imgpti.copyTo(r);
-        }
-        fs << "Image_points" << imagePtMat;
-    }
+	if (!imagePoints.empty())
+	{
+		Mat imagePtMat((int)imagePoints.size(), (int)imagePoints[0].size(), CV_32FC2);
+		for (int i = 0; i < (int)imagePoints.size(); i++)
+		{
+			Mat r = imagePtMat.row(i).reshape(2, imagePtMat.cols);
+			Mat imgpti(imagePoints[i]);
+			imgpti.copyTo(r);
+		}
+		fs << "Image_points" << imagePtMat;
+	}
+}
+
+// Print camera parameters to the output file
+static void loadCameraParams(Settings& s, Size& imageSize, Mat& cameraMatrix, Mat& distCoeffs,
+	const vector<Mat>& rvecs, const vector<Mat>& tvecs,
+	const vector<float>& reprojErrs, const vector<vector<Point2f> >& imagePoints,
+	double totalAvgErr)
+{
+	//TODO: actually load things
+
+	FileStorage fs(s.outputFileName, FileStorage::READ);
+
+	fs["board_Width"] >> s.boardSize.width;
+	fs["board_Height"] >> s.boardSize.height;
+	fs["square_Size"] >> s.squareSize;
+
+	fs["FixAspectRatio"] >> s.aspectRatio;
+
+	fs["flagValue"] >> s.flag;
+
+	fs["Camera_Matrix"] >> cameraMatrix;
+	fs["Distortion_Coefficients"] >> distCoeffs;
+
+	fs["Avg_Reprojection_Error"] >> totalAvgErr;
+	fs["Per_View_Reprojection_Errors"] >> Mat(reprojErrs);
+
+
+	//TODO: deze 2 moeten nog omgezet worden naar laden
+	if (!rvecs.empty() && !tvecs.empty())
+	{
+		CV_Assert(rvecs[0].type() == tvecs[0].type());
+		Mat bigmat((int)rvecs.size(), 6, rvecs[0].type());
+		for (int i = 0; i < (int)rvecs.size(); i++)
+		{
+			Mat r = bigmat(Range(i, i + 1), Range(0, 3));
+			Mat t = bigmat(Range(i, i + 1), Range(3, 6));
+
+			CV_Assert(rvecs[i].rows == 3 && rvecs[i].cols == 1);
+			CV_Assert(tvecs[i].rows == 3 && tvecs[i].cols == 1);
+			//*.t() is MatExpr (not Mat) so we can use assignment operator
+			r = rvecs[i].t();
+			t = tvecs[i].t();
+		}
+		cvWriteComment(*fs, "a set of 6-tuples (rotation vector + translation vector) for each view", 0);
+		fs << "Extrinsic_Parameters" << bigmat;
+
+
+		fs["Extrinsic_Parameters"] >> bigmat;
+		//TODO: hier de rvecs terugschrijven vanuit bigmat
+	}
+
+	if (!imagePoints.empty())
+	{
+		Mat imagePtMat((int)imagePoints.size(), (int)imagePoints[0].size(), CV_32FC2);
+		for (int i = 0; i < (int)imagePoints.size(); i++)
+		{
+			Mat r = imagePtMat.row(i).reshape(2, imagePtMat.cols);
+			Mat imgpti(imagePoints[i]);
+			imgpti.copyTo(r);
+		}
+		fs << "Image_points" << imagePtMat;
+		
+
+		fs["Image_points"] >> imagePtMat;
+		//TODO: hier imagePtMat terugschrijven naar de daadwerkelijke punten
+	}
 }
 
 bool runCalibrationAndSave(Settings& s, Size imageSize, Mat&  cameraMatrix, Mat& distCoeffs,vector<vector<Point2f> > imagePoints )

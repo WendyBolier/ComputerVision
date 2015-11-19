@@ -221,6 +221,9 @@ enum { DETECTION = 0, CAPTURING = 1, CALIBRATED = 2 };
 bool runCalibrationAndSave(Settings& s, Size imageSize, Mat&  cameraMatrix, Mat& distCoeffs,
                            vector<vector<Point2f> > imagePoints );
 
+static void drawCoordinateSystem(Mat view, Point originPoint, Point xPoint, Point yPoint, Point zPoint);
+static void drawCube(Mat view, Point originPoint, Point cubePoint);
+
 int main(int argc, char* argv[])
 {
     help();
@@ -349,8 +352,10 @@ int main(int argc, char* argv[])
             Mat temp = view.clone();
             undistort(temp, view, cameraMatrix, distCoeffs);
 
-			drawCoordinateSystem(view);
-			drawCube();
+			//drawCoordinateSystem(view, originPoint, xPoint, yPoint, zPoint);
+			//drawCube(view, originPoint, cubePoint);
+			drawCoordinateSystem(view, textOrigin, textOrigin, textOrigin, textOrigin);
+			//drawCube(view, originPoint, cubePoint);
         }
 
         //------------------------------ Show image and check for input commands -------------------

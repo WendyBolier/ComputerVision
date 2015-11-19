@@ -349,7 +349,8 @@ int main(int argc, char* argv[])
             Mat temp = view.clone();
             undistort(temp, view, cameraMatrix, distCoeffs);
 
-			//TODO: assenstelsel tekenen en kubus tekenen
+			drawCoordinateSystem(view);
+			drawCube();
         }
 
         //------------------------------ Show image and check for input commands -------------------
@@ -634,4 +635,16 @@ bool runCalibrationAndSave(Settings& s, Size imageSize, Mat&  cameraMatrix, Mat&
         saveCameraParams( s, imageSize, cameraMatrix, distCoeffs, rvecs ,tvecs, reprojErrs,
                             imagePoints, totalAvgErr);
     return ok;
+}
+
+static void drawCoordinateSystem(Mat view, Point originPoint, Point xPoint, Point yPoint, Point zPoint)
+{
+	arrowedLine(view, originPoint, xPoint, Scalar(255, 0, 0), 1, 8, 0, 0.1);
+	arrowedLine(view, originPoint, yPoint, Scalar(0, 255, 0), 1, 8, 0, 0.1);
+	arrowedLine(view, originPoint, zPoint, Scalar(0, 0, 255), 1, 8, 0, 0.1);
+}
+
+static void drawCube()
+{
+
 }

@@ -221,8 +221,93 @@ enum { DETECTION = 0, CAPTURING = 1, CALIBRATED = 2 };
 bool runCalibrationAndSave(Settings& s, Size imageSize, Mat&  cameraMatrix, Mat& distCoeffs,
                            vector<vector<Point2f> > imagePoints );
 
-static void drawCoordinateSystem(Mat view, Point originPoint, Point xPoint, Point yPoint, Point zPoint);
+static void drawCoordinateSystem(Mat view, Point2f originPoint, Point2f xPoint, Point2f yPoint, Point2f zPoint);
 static void drawCube(Mat view, Point originPoint, Point cubePoint);
+
+static double computeReprojectionErrors(const vector<vector<Point3f> >& objectPoints,
+	const vector<vector<Point2f> >& imagePoints,
+	const vector<Mat>& rvecs, const vector<Mat>& tvecs,
+	const Mat& cameraMatrix, const Mat& distCoeffs,
+	vector<float>& perViewErrors)
+{
+	vector<Point2f> imagePoints2;
+	int i, totalPoints = 0;
+	double totalErr = 0, err;
+	perViewErrors.resize(objectPoints.size());
+
+	for (i = 0; i < (int)objectPoints.size(); ++i)
+	{
+		projectPoints(Mat(objectPoints[i]), rvecs[i], tvecs[i], cameraMatrix,
+			distCoeffs, imagePoints2);
+		err = norm(Mat(imagePoints[i]), Mat(imagePoints2), CV_L2);
+
+		int n = (int)objectPoints[i].size();
+		perViewErrors[i] = (float)std::sqrt(err*err / n);
+		totalErr += err*err;
+		totalPoints += n;
+	}
+
+	return std::sqrt(totalErr / totalPoints);
+}
+
+static void calcBoardCornerPositions(Size boardSize, float squareSize, vector<Point3f>& corners,
+	Settings::Pattern patternType /*= Settings::CHESSBOARD*/)
+{
+	corners.clear();
+
+	switch (patternType)
+	{
+	case Settings::CHESSBOARD:
+	case Settings::CIRCLES_GRID:
+		for (int i = 0; i < boardSize.height; ++i)
+		for (int j = 0; j < boardSize.width; ++j)
+			corners.push_back(Point3f(float(j*squareSize), float(i*squareSize), 0));
+		break;
+
+	case Settings::ASYMMETRIC_CIRCLES_GRID:
+		for (int i = 0; i < boardSize.height; i++)
+		for (int j = 0; j < boardSize.width; j++)
+			corners.push_back(Point3f(float((2 * j + i % 2)*squareSize), float(i*squareSize), 0));
+		break;
+	default:
+		break;
+	}
+}
+
+static bool runCalibration(Settings& s, Size& imageSize, Mat& cameraMatrix, Mat& distCoeffs,
+	vector<vector<Point2f> > imagePoints, vector<Mat>& rvecs, vector<Mat>& tvecs,
+	vector<float>& reprojErrs, double& totalAvgErr)
+{
+
+	cameraMatrix = Mat::eye(3, 3, CV_64F);
+	if (s.flag & CV_CALIB_FIX_ASPECT_RATIO)
+		cameraMatrix.at<double>(0, 0) = 1.0;
+
+	distCoeffs = Mat::zeros(8, 1, CV_64F);
+
+	vector<vector<Point3f> > objectPoints(1);
+	calcBoardCornerPositions(s.boardSize, s.squareSize, objectPoints[0], s.calibrationPattern);
+
+	objectPoints.resize(imagePoints.size(), objectPoints[0]);
+
+	//Find intrinsic and extrinsic camera parameters
+	double rms = calibrateCamera(objectPoints, imagePoints, imageSize, cameraMatrix,
+		distCoeffs, rvecs, tvecs, s.flag | CV_CALIB_FIX_K4 | CV_CALIB_FIX_K5);
+
+	/*for (int i = 0; i < (int)objectPoints.size(); ++i)
+	{
+	cout << "rvecs" << rvecs[i];
+	}*/
+
+	cout << "Re-projection error reported by calibrateCamera: " << rms << endl;
+
+	bool ok = checkRange(cameraMatrix) && checkRange(distCoeffs);
+
+	totalAvgErr = computeReprojectionErrors(objectPoints, imagePoints,
+		rvecs, tvecs, cameraMatrix, distCoeffs, reprojErrs);
+
+	return ok;
+}
 
 int main(int argc, char* argv[])
 {
@@ -252,10 +337,10 @@ int main(int argc, char* argv[])
     const Scalar RED(0,0,255), GREEN(0,255,0);
     const char ESC_KEY = 27;
 
-	if (fileExists(s.outputFileName)) {
+	//if (fileExists(s.outputFileName)) {
 		//TODO: Load the saved data
-		mode = CALIBRATED;
-	}
+	//	mode = CALIBRATED;
+	//}
 
     for(int i = 0;;++i)
     {
@@ -353,8 +438,23 @@ int main(int argc, char* argv[])
             undistort(temp, view, cameraMatrix, distCoeffs);
 
 			//TO DO: calculate and insert the right points! 
+			vector<Mat> rvecs, tvecs;
+			vector<float> reprojErrs;
+			double totalAvgErr = 0;
 
-			//drawCoordinateSystem(view, originPoint, xPoint, yPoint, zPoint);
+			bool ok = runCalibration(s, imageSize, cameraMatrix, distCoeffs, imagePoints, rvecs, tvecs, reprojErrs, totalAvgErr);
+
+			//vector<Point3f> =
+			Point3f points[] { (0, 0, 0), (3, 0, 0), (0, 3, 0), (0, 0, -3) };
+			vector<Point3f> axisPoints;
+			axisPoints.push_back(points[0]);
+			axisPoints.push_back(points[1]);
+			axisPoints.push_back(points[2]);
+			axisPoints.push_back(points[3]);
+			vector<Point2f> newPoints;
+			projectPoints(axisPoints, rvecs, tvecs, cameraMatrix, distCoeffs, newPoints);
+
+			drawCoordinateSystem(view, newPoints[0], newPoints[1], newPoints[2], newPoints[3]);
 			//drawCube(view, originPoint, cubePoint);
         }
 
@@ -398,86 +498,6 @@ int main(int argc, char* argv[])
 
 
     return 0;
-}
-
-static double computeReprojectionErrors( const vector<vector<Point3f> >& objectPoints,
-                                         const vector<vector<Point2f> >& imagePoints,
-                                         const vector<Mat>& rvecs, const vector<Mat>& tvecs,
-                                         const Mat& cameraMatrix , const Mat& distCoeffs,
-                                         vector<float>& perViewErrors)
-{
-    vector<Point2f> imagePoints2;
-    int i, totalPoints = 0;
-    double totalErr = 0, err;
-    perViewErrors.resize(objectPoints.size());
-
-    for( i = 0; i < (int)objectPoints.size(); ++i )
-    {
-        projectPoints( Mat(objectPoints[i]), rvecs[i], tvecs[i], cameraMatrix,
-                       distCoeffs, imagePoints2);
-        err = norm(Mat(imagePoints[i]), Mat(imagePoints2), CV_L2);
-
-        int n = (int)objectPoints[i].size();
-        perViewErrors[i] = (float) std::sqrt(err*err/n);
-        totalErr        += err*err;
-        totalPoints     += n;
-    }
-
-    return std::sqrt(totalErr/totalPoints);
-}
-
-static void calcBoardCornerPositions(Size boardSize, float squareSize, vector<Point3f>& corners,
-                                     Settings::Pattern patternType /*= Settings::CHESSBOARD*/)
-{
-    corners.clear();
-
-    switch(patternType)
-    {
-    case Settings::CHESSBOARD:
-    case Settings::CIRCLES_GRID:
-        for( int i = 0; i < boardSize.height; ++i )
-            for( int j = 0; j < boardSize.width; ++j )
-                corners.push_back(Point3f(float( j*squareSize ), float( i*squareSize ), 0));
-        break;
-
-    case Settings::ASYMMETRIC_CIRCLES_GRID:
-        for( int i = 0; i < boardSize.height; i++ )
-            for( int j = 0; j < boardSize.width; j++ )
-                corners.push_back(Point3f(float((2*j + i % 2)*squareSize), float(i*squareSize), 0));
-        break;
-    default:
-        break;
-    }
-}
-
-static bool runCalibration( Settings& s, Size& imageSize, Mat& cameraMatrix, Mat& distCoeffs,
-                            vector<vector<Point2f> > imagePoints, vector<Mat>& rvecs, vector<Mat>& tvecs,
-                            vector<float>& reprojErrs,  double& totalAvgErr)
-{
-
-    cameraMatrix = Mat::eye(3, 3, CV_64F);
-    if( s.flag & CV_CALIB_FIX_ASPECT_RATIO )
-        cameraMatrix.at<double>(0,0) = 1.0;
-
-    distCoeffs = Mat::zeros(8, 1, CV_64F);
-
-    vector<vector<Point3f> > objectPoints(1);
-    calcBoardCornerPositions(s.boardSize, s.squareSize, objectPoints[0], s.calibrationPattern);
-
-    objectPoints.resize(imagePoints.size(),objectPoints[0]);
-
-    //Find intrinsic and extrinsic camera parameters
-    double rms = calibrateCamera(objectPoints, imagePoints, imageSize, cameraMatrix,
-                                 distCoeffs, rvecs, tvecs, s.flag|CV_CALIB_FIX_K4|CV_CALIB_FIX_K5);
-
-    cout << "Re-projection error reported by calibrateCamera: "<< rms << endl;
-
-    bool ok = checkRange(cameraMatrix) && checkRange(distCoeffs);
-
-    totalAvgErr = computeReprojectionErrors(objectPoints, imagePoints,
-                                             rvecs, tvecs, cameraMatrix, distCoeffs, reprojErrs);
-
-    return ok;
 }
 
 // Print camera parameters to the output file
@@ -600,11 +620,11 @@ static void loadCameraParams(Settings& s, Size& imageSize, Mat& cameraMatrix, Ma
 			r = rvecs[i].t();
 			t = tvecs[i].t();
 		}
-		cvWriteComment(*fs, "a set of 6-tuples (rotation vector + translation vector) for each view", 0);
 		fs << "Extrinsic_Parameters" << bigmat;
 
 
 		fs["Extrinsic_Parameters"] >> bigmat;
+		
 		//TODO: hier de rvecs terugschrijven vanuit bigmat
 	}
 
@@ -642,7 +662,7 @@ bool runCalibrationAndSave(Settings& s, Size imageSize, Mat&  cameraMatrix, Mat&
     return ok;
 }
 
-static void drawCoordinateSystem(Mat view, Point originPoint, Point xPoint, Point yPoint, Point zPoint)
+static void drawCoordinateSystem(Mat view, Point2f originPoint, Point2f xPoint, Point2f yPoint, Point2f zPoint)
 {
 	arrowedLine(view, originPoint, xPoint, Scalar(255, 0, 0), 1, 8, 0, 0.1);
 	arrowedLine(view, originPoint, yPoint, Scalar(0, 255, 0), 1, 8, 0, 0.1);

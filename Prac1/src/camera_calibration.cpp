@@ -352,9 +352,9 @@ int main(int argc, char* argv[])
             Mat temp = view.clone();
             undistort(temp, view, cameraMatrix, distCoeffs);
 
+			//TO DO: calculate and insert the right points! 
+
 			//drawCoordinateSystem(view, originPoint, xPoint, yPoint, zPoint);
-			//drawCube(view, originPoint, cubePoint);
-			drawCoordinateSystem(view, textOrigin, textOrigin, textOrigin, textOrigin);
 			//drawCube(view, originPoint, cubePoint);
         }
 

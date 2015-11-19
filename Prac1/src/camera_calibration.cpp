@@ -644,7 +644,7 @@ static void drawCoordinateSystem(Mat view, Point originPoint, Point xPoint, Poin
 	arrowedLine(view, originPoint, zPoint, Scalar(0, 0, 255), 1, 8, 0, 0.1);
 }
 
-static void drawCube()
+static void drawCube(Mat view, Point originPoint, Point cubePoint)
 {
-
+	rectangle(view, originPoint, cubePoint, Scalar(255, 20, 147), 1, 8, 0);
 }

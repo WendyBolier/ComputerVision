@@ -204,11 +204,10 @@ private:
 
 static void read(const FileNode& node, Settings& x, const Settings& default_value = Settings())
 {
-	// pas op, hier kan het fout gaan zonder de else
     if(!node.empty())
 		x.read(node);
-    /*else
-		x = default_value;*/
+    else
+		x = default_value;
 }
 
 inline bool fileExists(const std::string& name) {
@@ -293,11 +292,6 @@ static bool runCalibration(Settings& s, Size& imageSize, Mat& cameraMatrix, Mat&
 	//Find intrinsic and extrinsic camera parameters
 	double rms = calibrateCamera(objectPoints, imagePoints, imageSize, cameraMatrix,
 		distCoeffs, rvecs, tvecs, s.flag | CV_CALIB_FIX_K4 | CV_CALIB_FIX_K5);
-
-	/*for (int i = 0; i < (int)objectPoints.size(); ++i)
-	{
-	cout << "rvecs" << rvecs[i];
-	}*/
 
 	cout << "Re-projection error reported by calibrateCamera: " << rms << endl;
 
@@ -478,9 +472,47 @@ int main(int argc, char* argv[])
 				vector<vector<Point3f> > objectPoints(1);
 				calcBoardCornerPositions(s.boardSize, s.squareSize, objectPoints[0], s.calibrationPattern);
 				solvePnPRansac(objectPoints[0], pointBuf, cameraMatrix, distCoeffs, rvec, tvec);
+				
 				//TODO: volgens mij is het deze projectPoints die we zouden moeten vervangen door die vermenigvuldiging
-				projectPoints(axisPoints, rvec, tvec, cameraMatrix, distCoeffs, newPoints);
+				//projectPoints(axisPoints, rvec, tvec, cameraMatrix, distCoeffs, newPoints);
+				//code voor projectPoints: https://github.com/Itseez/opencv/blob/master/modules/calib3d/src/calibration.cpp
+				
+				//cout << rvec;
 
+				//rvec en tvec omzetten naar normale rotatie- en translatiematrixen
+				Mat rmatrix, tmatrix;
+				Rodrigues(rvec, rmatrix);
+				Rodrigues(tvec, tmatrix);
+				//cout << cameraMatrix;
+
+				/*Mat rtmatrix(3, 4, CV_32F, Scalar(0));
+				Rect rect_R(0, 0, rmatrix.rows, rmatrix.cols);
+				Mat out_R = rtmatrix(rect_R);
+				out_R = rvec;*/
+
+			
+				float x;
+				float y;
+				//vector<float> x;
+				//vector<float> y;
+				//cout << cameraMatrix.row(0);
+				
+				for (int i = 0; i < axisPoints.size(); i++)
+				{
+					//cout << axisPoints[i].x;
+					//x = axisPoints[i].x * cameraMatrix.row(0).col(0);
+					//x = axisPoints[i].x * cameraMatrix.at<float>(1,1) + axisPoints[i].x * cameraMatrix.at<float>(1,2) + axisPoints[i].x * cameraMatrix.at<float>(1,3);
+					//y = axisPoints[i].y * cameraMatrix.at<float>(1, 0) + axisPoints[i].x * cameraMatrix.at<float>(1, 1) + axisPoints[i].x * cameraMatrix.at<float>(1, 2);
+					
+					//newPoints[i] = Point2f(x, y);
+				}
+
+
+
+
+
+				// even uit-gecomment om onnodige errors te voorkomen
+				/*
 				vector<Point2f> coordinatePoints(newPoints.begin(), newPoints.end() - 8);
 				drawCoordinateSystem(view, coordinatePoints);
 				vector<Point2f> cubePoints(newPoints.begin() + 4, newPoints.end());
@@ -491,7 +523,7 @@ int main(int argc, char* argv[])
 				cubeOrigin.x += cubeMovement.x / 100;
 				cubeOrigin.x = std::max((float)0, std::min(cubeOrigin.x, (float)s.boardSize.width - 2));
 				cubeOrigin.y += cubeMovement.y / 100;
-				cubeOrigin.y = std::max((float)0, std::min(cubeOrigin.y, (float)s.boardSize.height - 2));
+				cubeOrigin.y = std::max((float)0, std::min(cubeOrigin.y, (float)s.boardSize.height - 2));*/
 			}
 		}
 

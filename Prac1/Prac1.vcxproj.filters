@@ -24,9 +24,4 @@
       <Filter>Resource Files</Filter>
     </Xml>
   </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="Assignment1.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-  </ItemGroup>
 </Project>

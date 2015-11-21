@@ -220,8 +220,8 @@ enum { DETECTION = 0, CAPTURING = 1, CALIBRATED = 2 };
 bool runCalibrationAndSave(Settings& s, Size imageSize, Mat&  cameraMatrix, Mat& distCoeffs,
                            vector<vector<Point2f> > imagePoints );
 
-static void drawCoordinateSystem(Mat view, vector<Point2f> coordinatePoints);
-static void drawCube(Mat view, vector<Point2f> cubePoints);
+static void drawCoordinateSystem(Mat view, vector<Point2d> coordinatePoints);
+static void drawCube(Mat view, vector<Point2d> cubePoints);
 
 static double computeReprojectionErrors(const vector<vector<Point3f> >& objectPoints,
 	const vector<vector<Point2f> >& imagePoints,
@@ -462,68 +462,76 @@ int main(int argc, char* argv[])
 			if (pointBuf.size() == s.boardSize.area()) {
 				Point2f cubeOffset = Point2f(cubeOrigin.x * s.squareSize + s.squareSize, cubeOrigin.y * s.squareSize + s.squareSize);
 				// first four are for the coordinate system, next eight are for the cube
-				vector<Point3f> axisPoints{ Point3f(0, 0, 0), Point3f(3 * s.squareSize, 0, 0), Point3f(0, 3 * s.squareSize, 0), Point3f(0, 0, -3 * s.squareSize),
-											Point3f(cubeOrigin.x * s.squareSize, cubeOrigin.y * s.squareSize, 0), Point3f(cubeOffset.x, cubeOrigin.y * s.squareSize, 0),
-											Point3f(cubeOffset.x, cubeOffset.y, 0), Point3f(cubeOrigin.x * s.squareSize, cubeOffset.y, 0),
-											Point3f(cubeOrigin.x * s.squareSize, cubeOrigin.y * s.squareSize, -s.squareSize), Point3f(cubeOffset.x, cubeOrigin.y * s.squareSize, -s.squareSize),
-											Point3f(cubeOffset.x, cubeOffset.y, -s.squareSize), Point3f(cubeOrigin.x * s.squareSize, cubeOffset.y, -s.squareSize) };
+				vector<Point3d> axisPoints{ Point3d(0, 0, 0), Point3d(3 * s.squareSize, 0, 0), Point3d(0, 3 * s.squareSize, 0), Point3d(0, 0, -3 * s.squareSize),
+											Point3d(cubeOrigin.x * s.squareSize, cubeOrigin.y * s.squareSize, 0), Point3d(cubeOffset.x, cubeOrigin.y * s.squareSize, 0),
+											Point3d(cubeOffset.x, cubeOffset.y, 0), Point3d(cubeOrigin.x * s.squareSize, cubeOffset.y, 0),
+											Point3d(cubeOrigin.x * s.squareSize, cubeOrigin.y * s.squareSize, -s.squareSize), Point3d(cubeOffset.x, cubeOrigin.y * s.squareSize, -s.squareSize),
+											Point3d(cubeOffset.x, cubeOffset.y, -s.squareSize), Point3d(cubeOrigin.x * s.squareSize, cubeOffset.y, -s.squareSize) };
 				vector<Point2f> newPoints{};
 				Mat rvec, tvec;
 				vector<vector<Point3f> > objectPoints(1);
 				calcBoardCornerPositions(s.boardSize, s.squareSize, objectPoints[0], s.calibrationPattern);
 				solvePnPRansac(objectPoints[0], pointBuf, cameraMatrix, distCoeffs, rvec, tvec);
 				
-				//TODO: volgens mij is het deze projectPoints die we zouden moeten vervangen door die vermenigvuldiging
 				//projectPoints(axisPoints, rvec, tvec, cameraMatrix, distCoeffs, newPoints);
-				//code voor projectPoints: https://github.com/Itseez/opencv/blob/master/modules/calib3d/src/calibration.cpp
-				
-				//cout << rvec;
-
-				//rvec en tvec omzetten naar normale rotatie- en translatiematrixen
-				Mat rmatrix, tmatrix;
-				Rodrigues(rvec, rmatrix);
-				Rodrigues(tvec, tmatrix);
-				//cout << cameraMatrix;
-
-				/*Mat rtmatrix(3, 4, CV_32F, Scalar(0));
-				Rect rect_R(0, 0, rmatrix.rows, rmatrix.cols);
-				Mat out_R = rtmatrix(rect_R);
-				out_R = rvec;*/
-
 			
-				float x;
-				float y;
-				//vector<float> x;
-				//vector<float> y;
-				//cout << cameraMatrix.row(0);
-				
+				//Convert rvec to rotation matrix
+				Mat rmatrix;
+				Rodrigues(rvec, rmatrix);
+
+				//Concatenate r and t
+				Mat rtmatrix;
+				vector<Mat> temp = { rmatrix, tvec };
+				hconcat(temp, rtmatrix);
+
+				// From 3D world coordinates to 3D camera coordinates (multiply the world coordinates with camera matrix K)
+				vector<Mat> cameraCoordinates;
 				for (int i = 0; i < axisPoints.size(); i++)
 				{
-					//cout << axisPoints[i].x;
-					//x = axisPoints[i].x * cameraMatrix.row(0).col(0);
-					//x = axisPoints[i].x * cameraMatrix.at<float>(1,1) + axisPoints[i].x * cameraMatrix.at<float>(1,2) + axisPoints[i].x * cameraMatrix.at<float>(1,3);
-					//y = axisPoints[i].y * cameraMatrix.at<float>(1, 0) + axisPoints[i].x * cameraMatrix.at<float>(1, 1) + axisPoints[i].x * cameraMatrix.at<float>(1, 2);
-					
-					//newPoints[i] = Point2f(x, y);
+					Mat axisPointsMatrix;
+					axisPointsMatrix.at<double>(0) = axisPoints[i].x;
+					axisPointsMatrix.at<double>(1) = axisPoints[i].y;
+					axisPointsMatrix.at<double>(2) = axisPoints[i].z;
+					cameraCoordinates[i] = axisPointsMatrix * cameraMatrix;
 				}
 
+				// From 3D camera coordinates to 2D image coordinates (multiply the 3D camera coordinates with the [R t] matrix)
+				vector<Mat> imageCoordinates;
+				for (int j = 0; j < cameraCoordinates.size(); j++)
+				{
+					imageCoordinates[j] = cameraCoordinates[j] * rtmatrix;
+				}
 
+				// Normalize for the z-value
+				vector<Point2d> imageCoordinatesNormalized; 
+				float x, y, z;
+				for (int k = 0; k < imageCoordinates.size(); k++)
+				{
+					x = imageCoordinates[k].at<double>(0);
+					y = imageCoordinates[k].at<double>(1);
+					z = imageCoordinates[k].at<double>(2);
 
+					x = x / z;
+					y = y / z;
 
-
-				// even uit-gecomment om onnodige errors te voorkomen
+					imageCoordinatesNormalized[k] = Point2d(x, y);
+				}
+				
 				/*
 				vector<Point2f> coordinatePoints(newPoints.begin(), newPoints.end() - 8);
 				drawCoordinateSystem(view, coordinatePoints);
 				vector<Point2f> cubePoints(newPoints.begin() + 4, newPoints.end());
-				drawCube(view, cubePoints);
+				drawCube(view, cubePoints);*/
+
+				drawCoordinateSystem(view, imageCoordinatesNormalized);
+				drawCube(view, imageCoordinatesNormalized);
 				
 				//control the cube by tilting
 				Point2f cubeMovement = newPoints[0] - newPoints[3];
 				cubeOrigin.x += cubeMovement.x / 100;
 				cubeOrigin.x = std::max((float)0, std::min(cubeOrigin.x, (float)s.boardSize.width - 2));
 				cubeOrigin.y += cubeMovement.y / 100;
-				cubeOrigin.y = std::max((float)0, std::min(cubeOrigin.y, (float)s.boardSize.height - 2));*/
+				cubeOrigin.y = std::max((float)0, std::min(cubeOrigin.y, (float)s.boardSize.height - 2));
 			}
 		}
 
@@ -665,14 +673,16 @@ bool runCalibrationAndSave(Settings& s, Size imageSize, Mat&  cameraMatrix, Mat&
     return ok;
 }
 
-static void drawCoordinateSystem(Mat view, vector<Point2f> coordinatePoints)
+// This function draws a coordinate system on the chessboard
+static void drawCoordinateSystem(Mat view, vector<Point2d> coordinatePoints)
 {
 	arrowedLine(view, coordinatePoints[0], coordinatePoints[1], Scalar(255, 0, 0), 1, 8, 0, 0.1);
 	arrowedLine(view, coordinatePoints[0], coordinatePoints[2], Scalar(0, 255, 0), 1, 8, 0, 0.1);
 	arrowedLine(view, coordinatePoints[0], coordinatePoints[3], Scalar(0, 0, 255), 1, 8, 0, 0.1);
 }
 
-static void drawCube(Mat view, vector<Point2f> cubePoints)
+// This function draws a cube on the chessboard
+static void drawCube(Mat view, vector<Point2d> cubePoints)
 {
 	//bottom plane
 	line(view, cubePoints[0], cubePoints[1], Scalar(255, 20, 147), 1, 8, 0);

@@ -16,6 +16,9 @@
   <ItemGroup>
     <Xml Include="default.xml" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Assignment1.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{11CA58F7-C744-427E-B552-D1969F4F0B42}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>

@@ -460,12 +460,11 @@ int main(int argc, char* argv[])
 			if (pointBuf.size() == s.boardSize.area()) {
 				Point2f cubeOffset = Point2f(cubeOrigin.x * s.squareSize + s.squareSize, cubeOrigin.y * s.squareSize + s.squareSize);
 				// first four are for the coordinate system, next eight are for the cube
-				vector<Point3d> axisPoints{ Point3d(0, 0, 0), Point3d(3 * s.squareSize, 0, 0), Point3d(0, 3 * s.squareSize, 0), Point3d(0, 0, -3 * s.squareSize),
+				vector<Point3d> pointsOfInterest { Point3d(0, 0, 0), Point3d(3 * s.squareSize, 0, 0), Point3d(0, 3 * s.squareSize, 0), Point3d(0, 0, -3 * s.squareSize),
 					Point3d(cubeOrigin.x * s.squareSize, cubeOrigin.y * s.squareSize, 0), Point3d(cubeOffset.x, cubeOrigin.y * s.squareSize, 0),
 					Point3d(cubeOffset.x, cubeOffset.y, 0), Point3d(cubeOrigin.x * s.squareSize, cubeOffset.y, 0),
 					Point3d(cubeOrigin.x * s.squareSize, cubeOrigin.y * s.squareSize, -s.squareSize), Point3d(cubeOffset.x, cubeOrigin.y * s.squareSize, -s.squareSize),
 					Point3d(cubeOffset.x, cubeOffset.y, -s.squareSize), Point3d(cubeOrigin.x * s.squareSize, cubeOffset.y, -s.squareSize) };
-				vector<Point2f> newPoints{};
 				Mat rvec, tvec;
 				vector<vector<Point3f> > objectPoints(1);
 				calcBoardCornerPositions(s.boardSize, s.squareSize, objectPoints[0], s.calibrationPattern);
@@ -479,50 +478,47 @@ int main(int argc, char* argv[])
 				Mat rtmatrix;
 				vector<Mat> temp = { rmatrix, tvec };
 				hconcat(temp, rtmatrix);
-
-				// From 3D world coordinates to 3D camera coordinates (multiply the world coordinates with camera matrix K)
+				
+				// From 3D world coordinates to 3D camera coordinates (multiply the world coordinates with [R t])
 				vector<Mat> cameraCoordinates;
-				for (unsigned int i = 0; i < axisPoints.size(); i++)
+				for (unsigned int i = 0; i < pointsOfInterest.size(); i++)
 				{
-					Mat axisPointsMatrix(3, 1, CV_64F);
-					axisPointsMatrix.at<double>(0) = axisPoints[i].x;
-					axisPointsMatrix.at<double>(1) = axisPoints[i].y;
-					axisPointsMatrix.at<double>(2) = axisPoints[i].z;
-					cameraCoordinates.push_back(cameraMatrix * axisPointsMatrix);
+					Mat pointOfInterest(4, 1, CV_64F);
+					pointOfInterest.at<double>(0) = pointsOfInterest[i].x;
+					pointOfInterest.at<double>(1) = pointsOfInterest[i].y;
+					pointOfInterest.at<double>(2) = pointsOfInterest[i].z;
+					pointOfInterest.at<double>(3) = 1;
+					cameraCoordinates.push_back(rtmatrix * pointOfInterest);
 				}
 
-				// From 3D camera coordinates to 2D image coordinates (multiply the 3D camera coordinates with the [R t] matrix)
+				// From 3D camera coordinates to 2D image coordinates (multiply the 3D camera coordinates with the camera matrix K)
 				vector<Mat> imageCoordinates;
 				for (unsigned int j = 0; j < cameraCoordinates.size(); j++)
 				{
-					imageCoordinates.push_back(cameraCoordinates[j].t() * rtmatrix);
+					imageCoordinates.push_back(cameraMatrix * cameraCoordinates[j]);
 				}
 
 				// Normalize for the z-value
 				vector<Point2d> imageCoordinatesNormalized;
 				double x, y, z;
-				try {
-					for (unsigned int k = 0; k < imageCoordinates.size(); k++)
-					{
-						x = imageCoordinates[k].at<double>(0);
-						y = imageCoordinates[k].at<double>(1);
-						z = imageCoordinates[k].at<double>(2);
+				for (unsigned int k = 0; k < imageCoordinates.size(); k++)
+				{
+					x = imageCoordinates[k].at<double>(0);
+					y = imageCoordinates[k].at<double>(1);
+					z = imageCoordinates[k].at<double>(2);
 
-						x = x / z;
-						y = y / z;
+					x = x / z;
+					y = y / z;
 
-						imageCoordinatesNormalized.push_back(Point2d(x, y));
-					}
-				}
-				catch (cv::Exception e) {
-
+					imageCoordinatesNormalized.push_back(Point2d(x, y));
 				}
 
+				vector<Point2d> coordinatePoints(imageCoordinatesNormalized.begin(), imageCoordinatesNormalized.end() - 8);
 				drawCoordinateSystem(view, imageCoordinatesNormalized);
-				drawCube(view, imageCoordinatesNormalized);
+				vector<Point2d> cubePoints(imageCoordinatesNormalized.begin() + 4, imageCoordinatesNormalized.end());
+				drawCube(view, cubePoints);
 
 				//control the cube by tilting, using the direction and length of the z-axis arrow
-				//Point2f cubeMovement = newPoints[0] - newPoints[3];
 				Point2f cubeMovement = imageCoordinatesNormalized[0] - imageCoordinatesNormalized[3];
 				cubeOrigin.x += cubeMovement.x / 100;
 				cubeOrigin.x = std::max((float)0, std::min(cubeOrigin.x, (float)s.boardSize.width - 2));

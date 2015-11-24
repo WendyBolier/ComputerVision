@@ -51,6 +51,9 @@
     <ClCompile Include="src\controllers\Scene3DRenderer.cpp">
       <Filter>Source Files\controllers</Filter>
     </ClCompile>
+    <ClCompile Include="src\CalibrateCameras.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\VoxelReconstruction.h">
@@ -73,6 +76,9 @@
     </ClInclude>
     <ClInclude Include="src\controllers\Scene3DRenderer.h">
       <Filter>Header Files\controllers</Filter>
+    </ClInclude>
+    <ClInclude Include="src\CalibrateCameras.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

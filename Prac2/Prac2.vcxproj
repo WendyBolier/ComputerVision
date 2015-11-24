@@ -86,6 +86,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\CalibrateCameras.cpp" />
     <ClCompile Include="src\controllers\arcball.cpp" />
     <ClCompile Include="src\controllers\Camera.cpp" />
     <ClCompile Include="src\controllers\Glut.cpp" />
@@ -96,6 +97,7 @@
     <ClCompile Include="src\VoxelReconstruction.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\CalibrateCameras.h" />
     <ClInclude Include="src\controllers\arcball.h" />
     <ClInclude Include="src\controllers\Camera.h" />
     <ClInclude Include="src\controllers\Glut.h" />

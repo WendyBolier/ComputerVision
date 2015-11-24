@@ -18,6 +18,7 @@
 #include "controllers/Reconstructor.h"
 #include "controllers/Scene3DRenderer.h"
 #include "utilities/General.h"
+#include "CalibrateCameras.h"
 
 using namespace nl_uu_science_gmt;
 using namespace std;
@@ -51,6 +52,9 @@ VoxelReconstruction::VoxelReconstruction(const string &dp, const int cva) :
 			General::fexists(full_path.str() + General::VideoFile)
 		);
 
+		if (!General::fexists(full_path.str() + General::IntrinsicsFile))
+			calibrateCamera(v);
+
 		/*
 		 * Assert that if there's no config.xml file, there's an intrinsics file and
 		 * a checkerboard video to create the extrinsics from
@@ -62,15 +66,10 @@ VoxelReconstruction::VoxelReconstruction(const string &dp, const int cva) :
 			 : true)
 		);
 
-		// if no config file
-		//getinstrinsics(camera)
-		//getextrinsics(camera)
-
 		m_cam_views.push_back(new Camera(full_path.str(), General::ConfigFile, v));
 	}
 
-	//if no final config
-	//createfinalconfig
+	
 }
 
 /**

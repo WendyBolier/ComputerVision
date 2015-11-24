@@ -62,8 +62,15 @@ VoxelReconstruction::VoxelReconstruction(const string &dp, const int cva) :
 			 : true)
 		);
 
+		// if no config file
+		//getinstrinsics(camera)
+		//getextrinsics(camera)
+
 		m_cam_views.push_back(new Camera(full_path.str(), General::ConfigFile, v));
 	}
+
+	//if no final config
+	//createfinalconfig
 }
 
 /**

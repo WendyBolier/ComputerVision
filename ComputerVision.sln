@@ -7,6 +7,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OpenCVTest", "OpenCVTest\Op
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Prac1", "Prac1\Prac1.vcxproj", "{11CA58F7-C744-427E-B552-D1969F4F0B42}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Prac2", "Prac2\Prac2.vcxproj", "{8BC8A0B5-1A6D-4C92-856B-3F2D794A95EB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -21,6 +23,10 @@ Global
 		{11CA58F7-C744-427E-B552-D1969F4F0B42}.Debug|Win32.Build.0 = Debug|Win32
 		{11CA58F7-C744-427E-B552-D1969F4F0B42}.Release|Win32.ActiveCfg = Release|Win32
 		{11CA58F7-C744-427E-B552-D1969F4F0B42}.Release|Win32.Build.0 = Release|Win32
+		{8BC8A0B5-1A6D-4C92-856B-3F2D794A95EB}.Debug|Win32.ActiveCfg = Debug|Win32
+		{8BC8A0B5-1A6D-4C92-856B-3F2D794A95EB}.Debug|Win32.Build.0 = Debug|Win32
+		{8BC8A0B5-1A6D-4C92-856B-3F2D794A95EB}.Release|Win32.ActiveCfg = Release|Win32
+		{8BC8A0B5-1A6D-4C92-856B-3F2D794A95EB}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -466,9 +466,14 @@ int main(int argc, char* argv[])
 					Point3d(cubeOrigin.x * s.squareSize, cubeOrigin.y * s.squareSize, -s.squareSize), Point3d(cubeOffset.x, cubeOrigin.y * s.squareSize, -s.squareSize),
 					Point3d(cubeOffset.x, cubeOffset.y, -s.squareSize), Point3d(cubeOrigin.x * s.squareSize, cubeOffset.y, -s.squareSize) };
 				Mat rvec, tvec;
-				vector<vector<Point3f> > objectPoints(1);
-				calcBoardCornerPositions(s.boardSize, s.squareSize, objectPoints[0], s.calibrationPattern);
-				solvePnPRansac(objectPoints[0], pointBuf, cameraMatrix, distCoeffs, rvec, tvec);
+				try {
+					vector<vector<Point3f>> objectPoints(1);
+					calcBoardCornerPositions(s.boardSize, s.squareSize, objectPoints[0], s.calibrationPattern);
+					solvePnPRansac(objectPoints[0], pointBuf, cameraMatrix, distCoeffs, rvec, tvec);
+				}
+				catch (Exception e) {
+
+				}
 
 				//Convert rvec to rotation matrix
 				Mat rmatrix;

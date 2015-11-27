@@ -65,9 +65,9 @@ Scene3DRenderer::Scene3DRenderer(
 	m_current_frame = 0;
 	m_previous_frame = -1;
 
-	const int H = 0;
-	const int S = 0;
-	const int V = 0;
+	const int H = 14;
+	const int S = 22;
+	const int V = 45;
 	m_h_threshold = H;
 	m_ph_threshold = H;
 	m_s_threshold = S;

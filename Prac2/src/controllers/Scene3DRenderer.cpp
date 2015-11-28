@@ -65,9 +65,9 @@ Scene3DRenderer::Scene3DRenderer(
 	m_current_frame = 0;
 	m_previous_frame = -1;
 
-	const int H = 14;
-	const int S = 22;
-	const int V = 45;
+	const int H = 7;
+	const int S = 17;
+	const int V = 46;
 	m_h_threshold = H;
 	m_ph_threshold = H;
 	m_s_threshold = S;
@@ -145,7 +145,48 @@ void Scene3DRenderer::processForeground(
 	threshold(tmp, background, m_v_threshold, 255, CV_THRESH_BINARY);
 	bitwise_or(foreground, background, foreground);
 
+	Mat kernel = kernel.zeros(3, 3, CV_8U);
+	kernel.at<char>(0, 1) = 1;
+	kernel.at<char>(1, 2) = 1;
+	kernel.at<char>(1, 2) = 1;
+	kernel.at<char>(2, 1) = 1;
+
+	dilate(foreground, foreground, kernel);
+	erode(foreground, foreground, kernel, Point(-1, -1), 4);
+	//dilate(foreground, foreground, Mat(), Point(-1, -1), 2);
+	//erode(foreground, foreground, Mat());
+	 
 	// Improve the foreground image
+	Mat bgModel, fgModel, mask(foreground.rows, foreground.cols, CV_8U);
+
+	int xmin = 10000, xmax = 0, ymin = 10000, ymax = 0;
+	for (int i = 0; i < mask.rows; i++){
+		for (int j = 0; j < mask.cols; j++){
+			if (foreground.at<uchar>(i, j) == 255) {
+				mask.at<uchar>(i, j) = 0;
+				xmin = min(xmin, j);
+				xmax = max(xmax, j);
+				ymin = min(ymin, i);
+				ymax = max(ymax, i);
+			}
+			else {
+				mask.at<uchar>(i, j) = 2;
+			}
+		}
+	}
+
+	grabCut(camera->getFrame(), mask, Rect(xmin, ymin, xmax - xmin, ymax - ymin), bgModel, fgModel, 5);
+
+	for (int i = 0; i < mask.rows; i++){
+		for (int j = 0; j < mask.cols; j++){
+			if (mask.at<uchar>(i, j) == 0) {
+				foreground.at<uchar>(i, j) = 255;
+			}
+			else {
+				foreground.at<uchar>(i, j) = 0;
+			}
+		}
+	}
 
 	camera->setForegroundImage(foreground);
 }

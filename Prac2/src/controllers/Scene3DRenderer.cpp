@@ -175,7 +175,7 @@ void Scene3DRenderer::processForeground(
 		}
 	}
 
-	grabCut(camera->getFrame(), mask, Rect(xmin, ymin, xmax - xmin, ymax - ymin), bgModel, fgModel, 5);
+	//grabCut(camera->getFrame(), mask, Rect(xmin, ymin, xmax - xmin, ymax - ymin), bgModel, fgModel, 5);
 
 	for (int i = 0; i < mask.rows; i++){
 		for (int j = 0; j < mask.cols; j++){

@@ -143,6 +143,7 @@ bool Camera::initialize()
  */
 Mat& Camera::advanceVideoFrame()
 {
+	m_p_frame = m_frame;
 	m_video >> m_frame;
 	assert(!m_frame.empty());
 	return m_frame;

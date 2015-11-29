@@ -24,6 +24,8 @@ namespace nl_uu_science_gmt
 
 class Scene3DRenderer
 {
+	const bool useGraphCut = false;
+
 	Reconstructor &m_reconstructor;          // Reference to Reconstructor
 	const std::vector<Camera*> &m_cameras;  // Reference to camera's vector
 	const int m_num;                        // Floor grid scale

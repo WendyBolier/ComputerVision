@@ -151,43 +151,49 @@ void Scene3DRenderer::processForeground(
 	kernel.at<char>(1, 2) = 1;
 	kernel.at<char>(2, 1) = 1;
 
-	dilate(foreground, foreground, kernel);
-	erode(foreground, foreground, kernel, Point(-1, -1), 4);
-	//dilate(foreground, foreground, Mat(), Point(-1, -1), 2);
-	//erode(foreground, foreground, Mat());
-	 
-	// Improve the foreground image
-	Mat bgModel, fgModel, mask(foreground.rows, foreground.cols, CV_8U);
+	if (!useGraphCut) {
+		erode(foreground, foreground, Mat());
+		dilate(foreground, foreground, Mat(), Point(-1, -1), 2);
+		erode(foreground, foreground, Mat());
+	}
+	else {
+		// Our Graph Cut implementation - ultimately dropped
+		dilate(foreground, foreground, kernel);
+		erode(foreground, foreground, kernel, Point(-1, -1), 10);
 
-	int xmin = 10000, xmax = 0, ymin = 10000, ymax = 0;
-	for (int i = 0; i < mask.rows; i++){
-		for (int j = 0; j < mask.cols; j++){
-			if (foreground.at<uchar>(i, j) == 255) {
-				mask.at<uchar>(i, j) = 0;
-				xmin = min(xmin, j);
-				xmax = max(xmax, j);
-				ymin = min(ymin, i);
-				ymax = max(ymax, i);
+		Mat bgModel, fgModel, mask(foreground.rows, foreground.cols, CV_8U);
+
+		int xmin = 10000, xmax = 0, ymin = 10000, ymax = 0;
+		for (int i = 0; i < mask.rows; i++){
+			//skip the last 10 pixels, because there are falsely positive columns of pixels there
+			for (int j = 0; j < mask.cols - 10; j++){
+				if (foreground.at<uchar>(i, j) == 255) {
+					mask.at<uchar>(i, j) = GC_FGD;
+					xmin = min(xmin, j);
+					xmax = max(xmax, j);
+					ymin = min(ymin, i);
+					ymax = max(ymax, i);
+				}
+				else {
+					mask.at<uchar>(i, j) = GC_PR_BGD;
+				}
 			}
-			else {
-				mask.at<uchar>(i, j) = 2;
+		}
+
+		grabCut(camera->getFrame(), mask, Rect(xmin - 20, ymin - 20, xmax - xmin + 20, ymax - ymin + 20), bgModel, fgModel, 3, GC_INIT_WITH_RECT);
+
+		for (int i = 0; i < mask.rows; i++) {
+			for (int j = 0; j < mask.cols; j++) {
+				uchar val = mask.at<uchar>(i, j);
+				if (val == GC_FGD | val == GC_PR_FGD) {
+					foreground.at<uchar>(i, j) = 255;
+				}
+				else {
+					foreground.at<uchar>(i, j) = 0;
+				}
 			}
 		}
 	}
-
-	//grabCut(camera->getFrame(), mask, Rect(xmin, ymin, xmax - xmin, ymax - ymin), bgModel, fgModel, 5);
-
-	for (int i = 0; i < mask.rows; i++){
-		for (int j = 0; j < mask.cols; j++){
-			if (mask.at<uchar>(i, j) == 0) {
-				foreground.at<uchar>(i, j) = 255;
-			}
-			else {
-				foreground.at<uchar>(i, j) = 0;
-			}
-		}
-	}
-
 	camera->setForegroundImage(foreground);
 }
 

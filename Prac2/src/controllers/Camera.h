@@ -51,6 +51,7 @@ class Camera
 	std::vector<cv::Point3f> m_camera_plane;         // Camera plane of view
 	std::vector<cv::Point3f> m_camera_floor;         // Projection of the camera itself onto the ground floor view
 
+	cv::Mat m_p_frame;                                 // Current video frame (image)
 	cv::Mat m_frame;                                 // Current video frame (image)
 
 	static void onMouse(int, int, int, int, void*);

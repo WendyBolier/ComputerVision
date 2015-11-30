@@ -263,9 +263,8 @@ void calibrateCamera(int video)
 		bool blinkOutput = false;
 
 		view = s.nextImage();
-		cout << "iets met " + to_string(i) + "..." << endl;
 
-		if (view.empty() || imagePoints.size() > s.nrFrames)          // If no more images then run calibration, save and stop loop.
+		if (view.empty() || imagePoints.size() >= s.nrFrames)          // If no more images then run calibration, save and stop loop.
 		{
 			if (imagePoints.size() > 0)
 			{
@@ -298,11 +297,15 @@ void calibrateCamera(int video)
 			if ((!s.inputCapture.isOpened() || clock() - prevTimestamp > s.delay*1e-3*CLOCKS_PER_SEC))
 			{
 				imagePoints.push_back(pointBuf);
-				prevTimestamp = clock();
+				cout << to_string(imagePoints.size()) + "/" + to_string(s.nrFrames) + " frames found..." << endl;
+				//prevTimestamp = clock();
 				blinkOutput = s.inputCapture.isOpened();
+				
+				//Skip 75 frames or 1.5 seconds
+				for (int j = 0; j <= 75; j++) {
+					view = s.nextImage();
+				}
 			}
-
-			i += 100;
 		}
 	}
 }

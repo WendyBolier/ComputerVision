@@ -57,6 +57,23 @@ Reconstructor::~Reconstructor()
 		delete m_voxels.at(v);
 }
 
+int Reconstructor::getVoxelIndex(int x, int y, int z) {
+	const int xL = -m_height;
+	const int xR = m_height;
+	const int yL = -m_height;
+	const int yR = m_height;
+	const int zL = 0;
+	const int zR = m_height;
+	const int plane_y = (yR - yL) / m_step;
+	const int plane_x = (xR - xL) / m_step;
+	const int plane = plane_y * plane_x;
+	const int zp = (z - zL) / m_step;
+	const int yp = (y - yL) / m_step;
+	const int xp = (x - xL) / m_step;
+
+	return zp * plane + yp * plane_x + xp;  // The voxel's index
+}
+
 /**
  * Create some Look Up Tables
  * 	- LUT for the scene's box corners

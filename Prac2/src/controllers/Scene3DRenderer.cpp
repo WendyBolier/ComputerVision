@@ -156,10 +156,10 @@ void Scene3DRenderer::processForeground(
 	kernel.at<char>(2, 1) = 1;
 
 	if (!useGraphCut) {
-		erode(foreground, foreground, Mat());
-		dilate(foreground, foreground, Mat(), Point(-1, -1), 2);
-		erode(foreground, foreground, Mat());
-		dilate(foreground, foreground, Mat(), Point(-1, -1), 2);
+		erode(foreground, foreground, kernel);
+		dilate(foreground, foreground, kernel, Point(-1, -1), 2);
+		erode(foreground, foreground, kernel);
+		dilate(foreground, foreground, kernel, Point(-1, -1), 2);
 	}
 	else {
 		// Our Graph Cut implementation - ultimately dropped

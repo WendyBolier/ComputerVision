@@ -30,6 +30,7 @@ Reconstructor::Reconstructor(
 				m_cameras(cs),
 				m_height(2048),
 				m_step(32)
+				//m_step(2048)
 {
 	for (size_t c = 0; c < m_cameras.size(); ++c)
 	{
@@ -139,6 +140,7 @@ void Reconstructor::initialize()
 				voxel->x = x;
 				voxel->y = y;
 				voxel->z = z;
+				voxel->visible = false;
 				voxel->camera_projection = vector<Point>(m_cameras.size());
 				voxel->valid_camera_projection = vector<int>(m_cameras.size(), 0);
 
@@ -198,9 +200,25 @@ void Reconstructor::update()
 		{
 #pragma omp critical //push_back is critical
 			visible_voxels.push_back(voxel);
+			voxel->visible = true;
 		}
 	}
 
+	// If the neighbours above and below a voxel are "on", then this voxel probably has to be "on" as well
+	for (int i = 0; i < (int)m_voxels_amount; i++)
+	{
+		Voxel* voxel = m_voxels[i];
+		if (voxel->visible != true)
+		{
+			Voxel* voxelAbove = m_voxels[getVoxelIndex(voxel->x, voxel->y, voxel->z + 1)];
+			Voxel* voxelBelow = m_voxels[getVoxelIndex(voxel->x, voxel->y, voxel->z - 1)];
+			if ((voxelAbove->visible == true) && (voxelBelow->visible == true))
+			{
+				visible_voxels.push_back(voxel);
+				voxel->visible = true;
+			}
+		}
+	}
 	m_visible_voxels.insert(m_visible_voxels.end(), visible_voxels.begin(), visible_voxels.end());
 }
 

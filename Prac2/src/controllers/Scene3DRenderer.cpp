@@ -133,16 +133,20 @@ void Scene3DRenderer::processForeground(
 	// Background subtraction H
 	Mat tmp, foreground, background;
 	absdiff(channels[0], camera->getBgHsvChannels().at(0), tmp);
-	threshold(tmp, foreground, m_h_threshold, 255, CV_THRESH_BINARY);
+	//threshold(tmp, foreground, m_h_threshold, 255, CV_THRESH_BINARY);
+	threshold(tmp, foreground, m_h_threshold, 255, THRESH_BINARY + THRESH_OTSU);
+
 
 	// Background subtraction S
 	absdiff(channels[1], camera->getBgHsvChannels().at(1), tmp);
-	threshold(tmp, background, m_s_threshold, 255, CV_THRESH_BINARY);
+	//threshold(tmp, background, m_s_threshold, 255, CV_THRESH_BINARY);
+	threshold(tmp, background, m_s_threshold, 255, THRESH_BINARY + THRESH_OTSU);
 	bitwise_and(foreground, background, foreground);
 
 	// Background subtraction V
 	absdiff(channels[2], camera->getBgHsvChannels().at(2), tmp);
-	threshold(tmp, background, m_v_threshold, 255, CV_THRESH_BINARY);
+	//threshold(tmp, background, m_v_threshold, 255, CV_THRESH_BINARY);
+	threshold(tmp, background, m_v_threshold, 255, CV_THRESH_BINARY + THRESH_OTSU);
 	bitwise_or(foreground, background, foreground);
 
 	Mat kernel = kernel.zeros(3, 3, CV_8U);
@@ -155,6 +159,7 @@ void Scene3DRenderer::processForeground(
 		erode(foreground, foreground, Mat());
 		dilate(foreground, foreground, Mat(), Point(-1, -1), 2);
 		erode(foreground, foreground, Mat());
+		dilate(foreground, foreground, Mat(), Point(-1, -1), 2);
 	}
 	else {
 		// Our Graph Cut implementation - ultimately dropped

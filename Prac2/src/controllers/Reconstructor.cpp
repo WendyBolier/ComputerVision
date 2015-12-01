@@ -208,15 +208,51 @@ void Reconstructor::update()
 	for (int i = 0; i < (int)m_voxels_amount; i++)
 	{
 		Voxel* voxel = m_voxels[i];
-		if (voxel->visible != true)
+		
+		Voxel* voxelAbove = m_voxels[getVoxelIndex(voxel->x, voxel->y, voxel->z + 1)];
+		Voxel* voxelBelow = m_voxels[getVoxelIndex(voxel->x, voxel->y, voxel->z - 1)];
+		Voxel* voxelLeft = m_voxels[getVoxelIndex(voxel->x + 1, voxel->y, voxel->z)];
+		Voxel* voxelRight = m_voxels[getVoxelIndex(voxel->x - 1, voxel->y, voxel->z)];
+		Voxel* voxelFront = m_voxels[getVoxelIndex(voxel->x, voxel->y + 1, voxel->z)];
+		Voxel* voxelBehind = m_voxels[getVoxelIndex(voxel->x, voxel->y - 1, voxel->z)];
+			
+		if (voxel->visible == false)
 		{
-			Voxel* voxelAbove = m_voxels[getVoxelIndex(voxel->x, voxel->y, voxel->z + 1)];
-			Voxel* voxelBelow = m_voxels[getVoxelIndex(voxel->x, voxel->y, voxel->z - 1)];
 			if ((voxelAbove->visible == true) && (voxelBelow->visible == true))
 			{
 				visible_voxels.push_back(voxel);
 				voxel->visible = true;
 			}
+			else if ((voxelLeft->visible == true) && (voxelRight->visible == true))
+			{
+				visible_voxels.push_back(voxel);
+				voxel->visible = true;
+			}
+			else if ((voxelFront->visible == true) && (voxelBehind->visible == true))
+			{
+				visible_voxels.push_back(voxel);
+				voxel->visible = true;
+			}
+		}
+	}
+
+	for (unsigned int j = 0; j < m_visible_voxels.size(); j++)
+	{
+		Voxel* voxel = m_visible_voxels[j];
+
+		Voxel* voxelAbove = m_voxels[getVoxelIndex(voxel->x, voxel->y, voxel->z + 1)];
+		Voxel* voxelBelow = m_voxels[getVoxelIndex(voxel->x, voxel->y, voxel->z - 1)];
+		Voxel* voxelLeft = m_voxels[getVoxelIndex(voxel->x + 1, voxel->y, voxel->z)];
+		Voxel* voxelRight = m_voxels[getVoxelIndex(voxel->x - 1, voxel->y, voxel->z)];
+		Voxel* voxelFront = m_voxels[getVoxelIndex(voxel->x, voxel->y + 1, voxel->z)];
+		Voxel* voxelBehind = m_voxels[getVoxelIndex(voxel->x, voxel->y - 1, voxel->z)];
+
+		if ((voxelFront->visible == false) && (voxelBehind->visible == false) && (voxelLeft->visible == false) &&
+			(voxelRight->visible == false) && (voxelFront->visible == false) && (voxelBehind->visible == false))
+		{
+			cout << "test";
+			m_visible_voxels.erase(m_visible_voxels.begin() + j);
+			voxel->visible = false;
 		}
 	}
 	m_visible_voxels.insert(m_visible_voxels.end(), visible_voxels.begin(), visible_voxels.end());

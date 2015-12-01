@@ -159,7 +159,6 @@ void Scene3DRenderer::processForeground(
 		erode(foreground, foreground, kernel);
 		dilate(foreground, foreground, kernel, Point(-1, -1), 2);
 		erode(foreground, foreground, kernel);
-		dilate(foreground, foreground, kernel, Point(-1, -1), 2);
 	}
 	else {
 		// Our Graph Cut implementation - ultimately dropped

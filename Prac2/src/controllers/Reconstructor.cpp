@@ -204,7 +204,7 @@ void Reconstructor::update()
 		}
 	}
 
-	// If the neighbours above and below a voxel are "on", then this voxel probably has to be "on" as well
+	// If the neighbours above and below, left and right or in front of behind a voxel are "on", then this voxel probably has to be "on" as well.
 	for (int i = 0; i < (int)m_voxels_amount; i++)
 	{
 		Voxel* voxel = m_voxels[i];
@@ -236,6 +236,7 @@ void Reconstructor::update()
 		}
 	}
 
+	// If all neighbours around a voxel are "off", then this voxel probably has to be "off" as well.
 	for (unsigned int j = 0; j < m_visible_voxels.size(); j++)
 	{
 		Voxel* voxel = m_visible_voxels[j];
@@ -250,7 +251,6 @@ void Reconstructor::update()
 		if ((voxelFront->visible == false) && (voxelBehind->visible == false) && (voxelLeft->visible == false) &&
 			(voxelRight->visible == false) && (voxelFront->visible == false) && (voxelBehind->visible == false))
 		{
-			cout << "test";
 			m_visible_voxels.erase(m_visible_voxels.begin() + j);
 			voxel->visible = false;
 		}

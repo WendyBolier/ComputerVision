@@ -93,6 +93,7 @@ public:
 	}
 
 	int getVoxelIndex(int x, int y, int z);
+
 };
 
 } /* namespace nl_uu_science_gmt */

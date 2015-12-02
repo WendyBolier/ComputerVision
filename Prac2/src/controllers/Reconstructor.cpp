@@ -179,7 +179,7 @@ void Reconstructor::update()
 
 	int v;
 #pragma omp parallel for schedule(auto) private(v) shared(visible_voxels)
-	for (v = 0; v < (int) m_voxels_amount; ++v)
+	for (v = 0; v < (int)m_voxels_amount; ++v)
 	{
 		int camera_counter = 0;
 		Voxel* voxel = m_voxels[v];
@@ -208,30 +208,39 @@ void Reconstructor::update()
 	for (int i = 0; i < (int)m_voxels_amount; i++)
 	{
 		Voxel* voxel = m_voxels[i];
-		
-		Voxel* voxelAbove = m_voxels[getVoxelIndex(voxel->x, voxel->y, voxel->z + 1)];
-		Voxel* voxelBelow = m_voxels[getVoxelIndex(voxel->x, voxel->y, voxel->z - 1)];
-		Voxel* voxelLeft = m_voxels[getVoxelIndex(voxel->x + 1, voxel->y, voxel->z)];
-		Voxel* voxelRight = m_voxels[getVoxelIndex(voxel->x - 1, voxel->y, voxel->z)];
-		Voxel* voxelFront = m_voxels[getVoxelIndex(voxel->x, voxel->y + 1, voxel->z)];
-		Voxel* voxelBehind = m_voxels[getVoxelIndex(voxel->x, voxel->y - 1, voxel->z)];
-			
-		if (voxel->visible == false)
+
+		if (((voxel->z + m_step) >= 2048) || ((voxel->z - m_step) <= 0) || ((voxel->x - m_step) <= -2048) ||
+			((voxel->x + m_step) >= 2048) || ((voxel->y - m_step) <= -2048) || ((voxel->y + m_step) >= 2048))
 		{
-			if ((voxelAbove->visible == true) && (voxelBelow->visible == true))
+		}
+		else
+		{
+
+			Voxel* voxelAbove = m_voxels[getVoxelIndex(voxel->x, voxel->y, voxel->z + m_step)];
+			Voxel* voxelBelow = m_voxels[getVoxelIndex(voxel->x, voxel->y, voxel->z - m_step)];
+			Voxel* voxelLeft = m_voxels[getVoxelIndex(voxel->x + m_step, voxel->y, voxel->z)];
+			Voxel* voxelRight = m_voxels[getVoxelIndex(voxel->x - m_step, voxel->y, voxel->z)];
+			Voxel* voxelFront = m_voxels[getVoxelIndex(voxel->x, voxel->y + m_step, voxel->z)];
+			Voxel* voxelBehind = m_voxels[getVoxelIndex(voxel->x, voxel->y - m_step, voxel->z)];
+
+
+			if (voxel->visible == false)
 			{
-				visible_voxels.push_back(voxel);
-				voxel->visible = true;
-			}
-			else if ((voxelLeft->visible == true) && (voxelRight->visible == true))
-			{
-				visible_voxels.push_back(voxel);
-				voxel->visible = true;
-			}
-			else if ((voxelFront->visible == true) && (voxelBehind->visible == true))
-			{
-				visible_voxels.push_back(voxel);
-				voxel->visible = true;
+				if ((voxelAbove->visible == true) && (voxelBelow->visible == true))
+				{
+					visible_voxels.push_back(voxel);
+					voxel->visible = true;
+				}
+				else if ((voxelLeft->visible == true) && (voxelRight->visible == true))
+				{
+					visible_voxels.push_back(voxel);
+					voxel->visible = true;
+				}
+				else if ((voxelFront->visible == true) && (voxelBehind->visible == true))
+				{
+					visible_voxels.push_back(voxel);
+					voxel->visible = true;
+				}
 			}
 		}
 	}
@@ -241,18 +250,25 @@ void Reconstructor::update()
 	{
 		Voxel* voxel = m_visible_voxels[j];
 
-		Voxel* voxelAbove = m_voxels[getVoxelIndex(voxel->x, voxel->y, voxel->z + 1)];
-		Voxel* voxelBelow = m_voxels[getVoxelIndex(voxel->x, voxel->y, voxel->z - 1)];
-		Voxel* voxelLeft = m_voxels[getVoxelIndex(voxel->x + 1, voxel->y, voxel->z)];
-		Voxel* voxelRight = m_voxels[getVoxelIndex(voxel->x - 1, voxel->y, voxel->z)];
-		Voxel* voxelFront = m_voxels[getVoxelIndex(voxel->x, voxel->y + 1, voxel->z)];
-		Voxel* voxelBehind = m_voxels[getVoxelIndex(voxel->x, voxel->y - 1, voxel->z)];
-
-		if ((voxelFront->visible == false) && (voxelBehind->visible == false) && (voxelLeft->visible == false) &&
-			(voxelRight->visible == false) && (voxelFront->visible == false) && (voxelBehind->visible == false))
+		if (((voxel->z + m_step) >= 2048) || ((voxel->z - m_step) <= 0) || ((voxel->x - m_step) <= -2048) ||
+			((voxel->x + m_step) >= 2048) || ((voxel->y - m_step) <= -2048) || ((voxel->y + m_step) >= 2048))
 		{
-			m_visible_voxels.erase(m_visible_voxels.begin() + j);
-			voxel->visible = false;
+		}
+		else
+		{
+			Voxel* voxelAbove = m_voxels[getVoxelIndex(voxel->x, voxel->y, voxel->z + m_step)];
+			Voxel* voxelBelow = m_voxels[getVoxelIndex(voxel->x, voxel->y, voxel->z - m_step)];
+			Voxel* voxelLeft = m_voxels[getVoxelIndex(voxel->x + m_step, voxel->y, voxel->z)];
+			Voxel* voxelRight = m_voxels[getVoxelIndex(voxel->x - m_step, voxel->y, voxel->z)];
+			Voxel* voxelFront = m_voxels[getVoxelIndex(voxel->x, voxel->y + m_step, voxel->z)];
+			Voxel* voxelBehind = m_voxels[getVoxelIndex(voxel->x, voxel->y - m_step, voxel->z)];
+
+			if ((voxelFront->visible == false) && (voxelBehind->visible == false) && (voxelLeft->visible == false) &&
+				(voxelRight->visible == false) && (voxelFront->visible == false) && (voxelBehind->visible == false))
+			{
+				m_visible_voxels.erase(m_visible_voxels.begin() + j);
+				voxel->visible = false;
+			}
 		}
 	}
 	m_visible_voxels.insert(m_visible_voxels.end(), visible_voxels.begin(), visible_voxels.end());

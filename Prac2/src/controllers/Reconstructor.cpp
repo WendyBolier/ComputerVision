@@ -29,8 +29,8 @@ Reconstructor::Reconstructor(
 		const vector<Camera*> &cs) :
 				m_cameras(cs),
 				m_height(2048),
-				m_step(32)
-				//m_step(2048)
+				//m_step(32)
+				m_step(2048)
 {
 	for (size_t c = 0; c < m_cameras.size(); ++c)
 	{
@@ -212,6 +212,7 @@ void Reconstructor::update()
 		if (((voxel->z + m_step) >= 2048) || ((voxel->z - m_step) <= 0) || ((voxel->x - m_step) <= -2048) ||
 			((voxel->x + m_step) >= 2048) || ((voxel->y - m_step) <= -2048) || ((voxel->y + m_step) >= 2048))
 		{
+			// we ignore the voxels on the borders
 		}
 		else
 		{
@@ -246,13 +247,14 @@ void Reconstructor::update()
 	}
 
 	// If all neighbours around a voxel are "off", then this voxel probably has to be "off" as well.
-	for (unsigned int j = 0; j < m_visible_voxels.size(); j++)
+	for (unsigned int j = 0; j < visible_voxels.size(); j++)
 	{
-		Voxel* voxel = m_visible_voxels[j];
-
+		Voxel* voxel = visible_voxels[j];
+		
 		if (((voxel->z + m_step) >= 2048) || ((voxel->z - m_step) <= 0) || ((voxel->x - m_step) <= -2048) ||
 			((voxel->x + m_step) >= 2048) || ((voxel->y - m_step) <= -2048) || ((voxel->y + m_step) >= 2048))
 		{
+			// we ignore the voxels on the borders
 		}
 		else
 		{
@@ -266,7 +268,7 @@ void Reconstructor::update()
 			if ((voxelFront->visible == false) && (voxelBehind->visible == false) && (voxelLeft->visible == false) &&
 				(voxelRight->visible == false) && (voxelFront->visible == false) && (voxelBehind->visible == false))
 			{
-				m_visible_voxels.erase(m_visible_voxels.begin() + j);
+				visible_voxels.erase(visible_voxels.begin() + j);
 				voxel->visible = false;
 			}
 		}

@@ -29,8 +29,8 @@ Reconstructor::Reconstructor(
 		const vector<Camera*> &cs) :
 				m_cameras(cs),
 				m_height(2048),
-				//m_step(32)
-				m_step(2048)
+				m_step(32)
+				//m_step(2048)
 {
 	for (size_t c = 0; c < m_cameras.size(); ++c)
 	{
@@ -203,7 +203,7 @@ void Reconstructor::update()
 			voxel->visible = true;
 		}
 	}
-
+	
 	// If the neighbours above and below, left and right or in front of behind a voxel are "on", then this voxel probably has to be "on" as well.
 	for (int i = 0; i < (int)m_voxels_amount; i++)
 	{
@@ -245,7 +245,7 @@ void Reconstructor::update()
 			}
 		}
 	}
-
+	
 	// If all neighbours around a voxel are "off", then this voxel probably has to be "off" as well.
 	for (unsigned int j = 0; j < visible_voxels.size(); j++)
 	{

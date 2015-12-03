@@ -65,9 +65,9 @@ Scene3DRenderer::Scene3DRenderer(
 	m_current_frame = 0;
 	m_previous_frame = -1;
 
-	const int H = 0;
-	const int S = 0;
-	const int V = 0;
+	const int H = 7;
+	const int S = 17;
+	const int V = 46;
 	m_h_threshold = H;
 	m_ph_threshold = H;
 	m_s_threshold = S;
@@ -134,18 +134,18 @@ void Scene3DRenderer::processForeground(
 	Mat tmp, foreground, background;
 	absdiff(channels[0], camera->getBgHsvChannels().at(0), tmp);
 	//threshold(tmp, foreground, m_h_threshold, 255, CV_THRESH_BINARY);
-	threshold(tmp, foreground, m_h_threshold, 255, THRESH_BINARY | THRESH_OTSU);
+	threshold(tmp, foreground, 0, 255, THRESH_BINARY | THRESH_OTSU);
 	
 	// Background subtraction S
 	absdiff(channels[1], camera->getBgHsvChannels().at(1), tmp);
 	//threshold(tmp, background, m_s_threshold, 255, CV_THRESH_BINARY);
-	threshold(tmp, background, m_s_threshold, 255, THRESH_BINARY | THRESH_OTSU);
+	threshold(tmp, background, 0, 255, THRESH_BINARY | THRESH_OTSU);
 	bitwise_or(foreground, background, foreground);
 	
 	// Background subtraction V
 	absdiff(channels[2], camera->getBgHsvChannels().at(2), tmp);
 	//threshold(tmp, background, m_v_threshold, 255, CV_THRESH_BINARY);
-	threshold(tmp, background, m_v_threshold, 255, CV_THRESH_BINARY | THRESH_OTSU);
+	threshold(tmp, background, 0, 255, CV_THRESH_BINARY | THRESH_OTSU);
 	bitwise_or(foreground, background, foreground);
 
 	Mat kernel = kernel.zeros(3, 3, CV_8U);

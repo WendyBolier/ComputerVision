@@ -30,7 +30,6 @@ Reconstructor::Reconstructor(
 				m_cameras(cs),
 				m_height(2048),
 				m_step(32)
-				//m_step(2048)
 {
 	for (size_t c = 0; c < m_cameras.size(); ++c)
 	{
@@ -216,14 +215,12 @@ void Reconstructor::update()
 		}
 		else
 		{
-
 			Voxel* voxelAbove = m_voxels[getVoxelIndex(voxel->x, voxel->y, voxel->z + m_step)];
 			Voxel* voxelBelow = m_voxels[getVoxelIndex(voxel->x, voxel->y, voxel->z - m_step)];
 			Voxel* voxelLeft = m_voxels[getVoxelIndex(voxel->x + m_step, voxel->y, voxel->z)];
 			Voxel* voxelRight = m_voxels[getVoxelIndex(voxel->x - m_step, voxel->y, voxel->z)];
 			Voxel* voxelFront = m_voxels[getVoxelIndex(voxel->x, voxel->y + m_step, voxel->z)];
 			Voxel* voxelBehind = m_voxels[getVoxelIndex(voxel->x, voxel->y - m_step, voxel->z)];
-
 
 			if (voxel->visible == false)
 			{

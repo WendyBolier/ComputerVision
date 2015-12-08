@@ -13,10 +13,72 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files\utilities">
+      <UniqueIdentifier>{9be3d78d-0323-434a-9b08-8c0f60e3ca01}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\utilities">
+      <UniqueIdentifier>{0a261d4e-eb7b-4689-a2b3-412dfa1fcce1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\controllers">
+      <UniqueIdentifier>{506db2cf-f143-4f69-8b12-196efa80d398}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\controllers">
+      <UniqueIdentifier>{0e0769b8-427e-4032-81ff-8509385e33c4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\VoxelReconstruction.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\utilities\General.cpp">
+      <Filter>Source Files\utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="src\controllers\arcball.cpp">
+      <Filter>Source Files\controllers</Filter>
+    </ClCompile>
+    <ClCompile Include="src\controllers\Camera.cpp">
+      <Filter>Source Files\controllers</Filter>
+    </ClCompile>
+    <ClCompile Include="src\controllers\Glut.cpp">
+      <Filter>Source Files\controllers</Filter>
+    </ClCompile>
+    <ClCompile Include="src\controllers\Reconstructor.cpp">
+      <Filter>Source Files\controllers</Filter>
+    </ClCompile>
+    <ClCompile Include="src\controllers\Scene3DRenderer.cpp">
+      <Filter>Source Files\controllers</Filter>
+    </ClCompile>
+    <ClCompile Include="src\CalibrateCameras.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\VoxelReconstruction.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utilities\General.h">
+      <Filter>Header Files\utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="src\controllers\arcball.h">
+      <Filter>Header Files\controllers</Filter>
+    </ClInclude>
+    <ClInclude Include="src\controllers\Camera.h">
+      <Filter>Header Files\controllers</Filter>
+    </ClInclude>
+    <ClInclude Include="src\controllers\Glut.h">
+      <Filter>Header Files\controllers</Filter>
+    </ClInclude>
+    <ClInclude Include="src\controllers\Reconstructor.h">
+      <Filter>Header Files\controllers</Filter>
+    </ClInclude>
+    <ClInclude Include="src\controllers\Scene3DRenderer.h">
+      <Filter>Header Files\controllers</Filter>
+    </ClInclude>
+    <ClInclude Include="src\CalibrateCameras.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

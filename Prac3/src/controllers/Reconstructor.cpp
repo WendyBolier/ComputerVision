@@ -271,6 +271,23 @@ void Reconstructor::update()
 		}
 	}
 	m_visible_voxels.insert(m_visible_voxels.end(), visible_voxels.begin(), visible_voxels.end());
+
+	// Cluster the voxels
+	int numberOfClusters = 4;
+	Mat labels;
+	TermCriteria termCriteria = TermCriteria(CV_TERMCRIT_ITER, 10000, 0.0001);
+	int attempts = 3;
+	int flags = KMEANS_PP_CENTERS; // see to do
+	Mat centers;
+	kmeans(m_visible_voxels, numberOfClusters, labels, termCriteria, attempts, flags, centers);
+
+	/* To do: decide which flag to use
+
+	KMEANS_RANDOM_CENTERS Select random initial centers in each attempt.
+	KMEANS_PP_CENTERS Use kmeans++ center initialization by Arthur and Vassilvitskii [Arthur2007].
+	KMEANS_USE_INITIAL_LABELS During the first (and possibly the only) attempt, use the user-supplied labels instead of computing them from the initial centers. For the second and further attempts, use the random or semi-random centers. Use one of KMEANS_*_CENTERS flag to specify the exact method.
+		
+	*/
 }
 
 } /* namespace nl_uu_science_gmt */

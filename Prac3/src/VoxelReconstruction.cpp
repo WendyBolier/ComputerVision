@@ -9,6 +9,7 @@
 
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/highgui/highgui_c.h>
+#include <opencv2/ml/ml.hpp>
 #include <stddef.h>
 #include <cassert>
 #include <iostream>
@@ -135,8 +136,91 @@ void VoxelReconstruction::initializeColorModels(Scene3DRenderer scene3d, Glut gl
 
 	*/
 
+	std::vector<Reconstructor::Voxel*> voxelsPerson1, voxelsPerson2, voxelsPerson3, voxelsPerson4;
+
+	Mat samplesPerson1(0, 2, CV_32S);
+	Mat samplesPerson2(0, 2, CV_32S);
+	Mat samplesPerson3(0, 2, CV_32S);
+	Mat samplesPerson4(0, 2, CV_32S);
+
+	// Find out which voxels belong to which person 
+
+	// Create the samples for each person (from which the Gaussian mixture model will be estimated) 
+
+	for (int i = 0; i < labels.rows; i++)
+	{
+		Reconstructor::Voxel* voxel = voxels[i];
+		if (labels.at<float>(i, 0) == 0)
+		{
+			voxelsPerson1.push_back(voxel);
+			for (int k = 0; k < scene3d.getCameras().size(); k++)
+			{
+				Mat temp(1, 2, CV_32S);
+				Point p = voxel->camera_projection[k];
+				temp.at<int>(0, 0) = p.x;
+				temp.at<int>(0, 1) = p.y;
+				samplesPerson1.push_back(temp);
+			}
+		}
+		else if (labels.at<float>(i, 0) == 1)
+		{
+			voxelsPerson2.push_back(voxel);
+			for (int k = 0; k < scene3d.getCameras().size(); k++)
+			{
+				//samplesPerson2.push_back(voxel->camera_projection[k]);
+			}
+		}
+		else if (labels.at<float>(i, 0) == 2)
+		{
+			voxelsPerson3.push_back(voxel);
+			for (int k = 0; k < scene3d.getCameras().size(); k++)
+			{
+				//samplesPerson3.push_back(voxel->camera_projection[k]);
+			}
+		}
+		else if (labels.at<float>(i, 0) == 3)
+		{
+			voxelsPerson4.push_back(voxel);
+			for (int k = 0; k < scene3d.getCameras().size(); k++)
+			{
+				//samplesPerson4.push_back(voxel->camera_projection[k]);
+			}
+		}
+	}
+
+	int numberOfColors = 3;
+	const TermCriteria termCriteria2 = TermCriteria(TermCriteria::COUNT + TermCriteria::EPS, 100, FLT_EPSILON);
+
+	Mat logLikelihoodsP1(samplesPerson1.rows, 1, CV_64FC1);
+	Mat logLikelihoodsP2(samplesPerson2.rows, 1, CV_64FC1);
+	Mat logLikelihoodsP3(samplesPerson3.rows, 1, CV_64FC1);
+	Mat logLikelihoodsP4(samplesPerson4.rows, 1, CV_64FC1);
+
+	Mat labelsP1(samplesPerson1.rows, 1, CV_32SC1);
+	Mat labelsP2(samplesPerson2.rows, 1, CV_32SC1);
+	Mat labelsP3(samplesPerson3.rows, 1, CV_32SC1);
+	Mat labelsP4(samplesPerson4.rows, 1, CV_32SC1);
+
+	Mat probsP1(samplesPerson1.rows, numberOfColors, CV_64FC1);
+	Mat probsP2(samplesPerson2.rows, numberOfColors, CV_64FC1);
+	Mat probsP3(samplesPerson3.rows, numberOfColors, CV_64FC1);
+	Mat probsP4(samplesPerson4.rows, numberOfColors, CV_64FC1);
+
+	cv::EM emPerson1;
+	emPerson1 = cv::EM(numberOfColors, cv::EM::COV_MAT_DIAGONAL, termCriteria2);
+	/*cout << emPerson1.train(samplesPerson1, logLikelihoodsP1, labelsP1, probsP1);
+
+	EM emPerson2(numberOfColors, EM::COV_MAT_DIAGONAL, termCriteria2);
+	cout << emPerson2.train(samplesPerson2, logLikelihoodsP2, labelsP2, probsP2);
+
+	EM emPerson3(numberOfColors, EM::COV_MAT_DIAGONAL, termCriteria2);
+	cout << emPerson3.train(samplesPerson3, logLikelihoodsP3, labelsP3, probsP3);
+
+	EM emPerson4(numberOfColors, EM::COV_MAT_DIAGONAL, termCriteria2);
+	cout << emPerson4.train(samplesPerson4, logLikelihoodsP4, labelsP4, probsP4);
+
 	scene3d.setCurrentFrame(0);
-	cout << centers.at<float>(0, 0) << endl;
+	/*cout << centers.at<float>(0, 0) << endl;
 	cout << centers.at<float>(0, 1) << endl;
 	cout << centers.at<float>(1, 0) << endl;
 	cout << centers.at<float>(1, 1) << endl;
@@ -147,7 +231,7 @@ void VoxelReconstruction::initializeColorModels(Scene3DRenderer scene3d, Glut gl
 	cout << labels.at<float>(0, 0) << endl;
 	cout << labels.at<float>(1, 0) << endl;
 	cout << labels.at<float>(3, 0) << endl;
-	cout << labels.at<float>(4, 0) << endl;
+	cout << labels.at<float>(4, 0) << endl;*/
 }
 
 /**

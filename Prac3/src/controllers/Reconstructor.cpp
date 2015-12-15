@@ -112,7 +112,7 @@ void Reconstructor::initialize()
 
 	int z;
 	int pdone = 0;
-#pragma omp parallel for schedule(auto) private(z) shared(pdone)
+#pragma omp parallel for schedule(static) private(z) shared(pdone)
 	for (z = zL; z < zR; z += m_step)
 	{
 		const int zp = (z - zL) / m_step;
@@ -177,7 +177,7 @@ void Reconstructor::update()
 	std::vector<Voxel*> visible_voxels;
 
 	int v;
-#pragma omp parallel for schedule(auto) private(v) shared(visible_voxels)
+#pragma omp parallel for schedule(static) private(v) shared(visible_voxels)
 	for (v = 0; v < (int)m_voxels_amount; ++v)
 	{
 		int camera_counter = 0;
@@ -271,23 +271,6 @@ void Reconstructor::update()
 		}
 	}
 	m_visible_voxels.insert(m_visible_voxels.end(), visible_voxels.begin(), visible_voxels.end());
-
-	// Cluster the voxels
-	int numberOfClusters = 4;
-	Mat labels;
-	TermCriteria termCriteria = TermCriteria(CV_TERMCRIT_ITER, 10000, 0.0001);
-	int attempts = 3;
-	int flags = KMEANS_PP_CENTERS; // see to do
-	Mat centers;
-	kmeans(m_visible_voxels, numberOfClusters, labels, termCriteria, attempts, flags, centers);
-
-	/* To do: decide which flag to use
-
-	KMEANS_RANDOM_CENTERS Select random initial centers in each attempt.
-	KMEANS_PP_CENTERS Use kmeans++ center initialization by Arthur and Vassilvitskii [Arthur2007].
-	KMEANS_USE_INITIAL_LABELS During the first (and possibly the only) attempt, use the user-supplied labels instead of computing them from the initial centers. For the second and further attempts, use the random or semi-random centers. Use one of KMEANS_*_CENTERS flag to specify the exact method.
-		
-	*/
 }
 
 } /* namespace nl_uu_science_gmt */

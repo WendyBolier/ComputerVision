@@ -83,9 +83,6 @@ void Glut::initializeLinux(
 	glDepthFunc(GL_LESS);
 
 	glutTimerFunc(10, update, 0);
-
-	// from now on it's just events
-	glutMainLoop();
 }
 #elif defined _WIN32
 /**

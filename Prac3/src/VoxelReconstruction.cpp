@@ -105,6 +105,51 @@ void VoxelReconstruction::showKeys()
 	cout << "Rotate the 3D scene with left click+drag" << endl << endl;
 }
 
+void VoxelReconstruction::initializeColorModels(Scene3DRenderer scene3d, Glut glut) {
+	scene3d.setCurrentFrame(594);
+
+	glut.update(0);
+
+	// Cluster the voxels
+	int numberOfClusters = 4;
+	Mat labels;
+	Mat centers;
+	TermCriteria termCriteria = TermCriteria(CV_TERMCRIT_ITER, 10000, 0.0001);
+	int attempts = 3;
+	int flags = KMEANS_PP_CENTERS; // see to do
+	std::vector<Reconstructor::Voxel*, std::allocator<Reconstructor::Voxel*>> voxels = scene3d.getReconstructor().getVisibleVoxels();
+	Mat samples(voxels.size(), 2, CV_32F);
+
+	for (int x = 0; x < voxels.size(); x++) {
+		samples.at<float>(x, 0) = voxels[x]->x;
+		samples.at<float>(x, 1) = voxels[x]->y;
+	}
+
+	kmeans(samples, numberOfClusters, labels, termCriteria, attempts, flags, centers);
+
+	/* To do: decide which flag to use
+
+	KMEANS_RANDOM_CENTERS Select random initial centers in each attempt.
+	KMEANS_PP_CENTERS Use kmeans++ center initialization by Arthur and Vassilvitskii [Arthur2007].
+	KMEANS_USE_INITIAL_LABELS During the first (and possibly the only) attempt, use the user-supplied labels instead of computing them from the initial centers. For the second and further attempts, use the random or semi-random centers. Use one of KMEANS_*_CENTERS flag to specify the exact method.
+
+	*/
+
+	scene3d.setCurrentFrame(0);
+	cout << centers.at<float>(0, 0) << endl;
+	cout << centers.at<float>(0, 1) << endl;
+	cout << centers.at<float>(1, 0) << endl;
+	cout << centers.at<float>(1, 1) << endl;
+	cout << centers.at<float>(2, 0) << endl;
+	cout << centers.at<float>(2, 1) << endl;
+	cout << centers.at<float>(3, 0) << endl;
+	cout << centers.at<float>(3, 1) << endl << endl;
+	cout << labels.at<float>(0, 0) << endl;
+	cout << labels.at<float>(1, 0) << endl;
+	cout << labels.at<float>(3, 0) << endl;
+	cout << labels.at<float>(4, 0) << endl;
+}
+
 /**
  * - If the xml-file with camera intrinsics, extrinsics and distortion is missing,
  *   create it from the checkerboard video and the measured camera intrinsics
@@ -131,8 +176,11 @@ void VoxelReconstruction::run(int argc, char** argv)
 
 #ifdef __linux__
 	glut.initializeLinux(SCENE_WINDOW.c_str(), argc, argv);
+	initializeColorModels(scene3d);
+	glut.glutMainLoop();
 #elif defined _WIN32
 	glut.initializeWindows(SCENE_WINDOW.c_str());
+	initializeColorModels(scene3d, glut);
 	glut.mainLoopWindows();
 #endif
 }

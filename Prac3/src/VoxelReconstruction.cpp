@@ -208,7 +208,7 @@ void VoxelReconstruction::initializeColorModels(Scene3DRenderer scene3d, Glut gl
 
 	cv::EM emPerson1;
 	emPerson1 = cv::EM(numberOfColors, cv::EM::COV_MAT_DIAGONAL, termCriteria2);
-	/*cout << emPerson1.train(samplesPerson1, logLikelihoodsP1, labelsP1, probsP1);
+	cout << emPerson1.train(samplesPerson1, logLikelihoodsP1, labelsP1, probsP1);
 
 	EM emPerson2(numberOfColors, EM::COV_MAT_DIAGONAL, termCriteria2);
 	cout << emPerson2.train(samplesPerson2, logLikelihoodsP2, labelsP2, probsP2);
@@ -220,18 +220,6 @@ void VoxelReconstruction::initializeColorModels(Scene3DRenderer scene3d, Glut gl
 	cout << emPerson4.train(samplesPerson4, logLikelihoodsP4, labelsP4, probsP4);
 
 	scene3d.setCurrentFrame(0);
-	/*cout << centers.at<float>(0, 0) << endl;
-	cout << centers.at<float>(0, 1) << endl;
-	cout << centers.at<float>(1, 0) << endl;
-	cout << centers.at<float>(1, 1) << endl;
-	cout << centers.at<float>(2, 0) << endl;
-	cout << centers.at<float>(2, 1) << endl;
-	cout << centers.at<float>(3, 0) << endl;
-	cout << centers.at<float>(3, 1) << endl << endl;
-	cout << labels.at<float>(0, 0) << endl;
-	cout << labels.at<float>(1, 0) << endl;
-	cout << labels.at<float>(3, 0) << endl;
-	cout << labels.at<float>(4, 0) << endl;*/
 }
 
 /**

@@ -150,7 +150,7 @@ void VoxelReconstruction::initializeColorModels(Scene3DRenderer scene3d, Glut gl
 	for (int i = 0; i < labels.rows; i++)
 	{
 		Reconstructor::Voxel* voxel = voxels[i];
-		if (labels.at<float>(i, 0) == 0)
+		if (labels.at<int>(i, 0) == 0)
 		{
 			voxelsPerson1.push_back(voxel);
 			for (int k = 0; k < scene3d.getCameras().size(); k++)
@@ -162,28 +162,40 @@ void VoxelReconstruction::initializeColorModels(Scene3DRenderer scene3d, Glut gl
 				samplesPerson1.push_back(temp);
 			}
 		}
-		else if (labels.at<float>(i, 0) == 1)
+		else if (labels.at<int>(i, 0) == 1)
 		{
 			voxelsPerson2.push_back(voxel);
 			for (int k = 0; k < scene3d.getCameras().size(); k++)
 			{
-				//samplesPerson2.push_back(voxel->camera_projection[k]);
+				Mat temp(1, 2, CV_32S);
+				Point p = voxel->camera_projection[k];
+				temp.at<int>(0, 0) = p.x;
+				temp.at<int>(0, 1) = p.y;
+				samplesPerson2.push_back(temp);
 			}
 		}
-		else if (labels.at<float>(i, 0) == 2)
+		else if (labels.at<int>(i, 0) == 2)
 		{
 			voxelsPerson3.push_back(voxel);
 			for (int k = 0; k < scene3d.getCameras().size(); k++)
 			{
-				//samplesPerson3.push_back(voxel->camera_projection[k]);
+				Mat temp(1, 2, CV_32S);
+				Point p = voxel->camera_projection[k];
+				temp.at<int>(0, 0) = p.x;
+				temp.at<int>(0, 1) = p.y;
+				samplesPerson3.push_back(temp);
 			}
 		}
-		else if (labels.at<float>(i, 0) == 3)
+		else if (labels.at<int>(i, 0) == 3)
 		{
 			voxelsPerson4.push_back(voxel);
 			for (int k = 0; k < scene3d.getCameras().size(); k++)
 			{
-				//samplesPerson4.push_back(voxel->camera_projection[k]);
+				Mat temp(1, 2, CV_32S);
+				Point p = voxel->camera_projection[k];
+				temp.at<int>(0, 0) = p.x;
+				temp.at<int>(0, 1) = p.y;
+				samplesPerson4.push_back(temp);
 			}
 		}
 	}
@@ -206,17 +218,17 @@ void VoxelReconstruction::initializeColorModels(Scene3DRenderer scene3d, Glut gl
 	Mat probsP3(samplesPerson3.rows, numberOfColors, CV_64FC1);
 	Mat probsP4(samplesPerson4.rows, numberOfColors, CV_64FC1);
 
-	cv::EM emPerson1;
+	cv::EM emPerson1, emPerson2, emPerson3, emPerson4;
 	emPerson1 = cv::EM(numberOfColors, cv::EM::COV_MAT_DIAGONAL, termCriteria2);
 	cout << emPerson1.train(samplesPerson1, logLikelihoodsP1, labelsP1, probsP1);
 
-	EM emPerson2(numberOfColors, EM::COV_MAT_DIAGONAL, termCriteria2);
+	emPerson2 = cv::EM(numberOfColors, cv::EM::COV_MAT_DIAGONAL, termCriteria2);
 	cout << emPerson2.train(samplesPerson2, logLikelihoodsP2, labelsP2, probsP2);
 
-	EM emPerson3(numberOfColors, EM::COV_MAT_DIAGONAL, termCriteria2);
+	emPerson3 = cv::EM(numberOfColors, cv::EM::COV_MAT_DIAGONAL, termCriteria2);
 	cout << emPerson3.train(samplesPerson3, logLikelihoodsP3, labelsP3, probsP3);
 
-	EM emPerson4(numberOfColors, EM::COV_MAT_DIAGONAL, termCriteria2);
+	emPerson4 = cv::EM(numberOfColors, cv::EM::COV_MAT_DIAGONAL, termCriteria2);
 	cout << emPerson4.train(samplesPerson4, logLikelihoodsP4, labelsP4, probsP4);
 
 	scene3d.setCurrentFrame(0);

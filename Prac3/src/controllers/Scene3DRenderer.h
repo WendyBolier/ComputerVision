@@ -424,6 +424,8 @@ namespace nl_uu_science_gmt
 
 		void initialSpatialVoxelClustering();
 
+		void updateClusters();
+
 		void recluster();
 
 		void createFloorGrid();

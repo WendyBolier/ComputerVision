@@ -74,7 +74,7 @@ Scene3DRenderer::Scene3DRenderer(
 	m_v_threshold = V;
 	m_pv_threshold = V;
 
-	int numberOfClusters = 4;
+	numberOfClusters = 4;
 
 	createTrackbar("Frame", VIDEO_WINDOW, &m_current_frame, m_number_of_frames - 2);
 	createTrackbar("H", VIDEO_WINDOW, &m_h_threshold, 255);
@@ -101,41 +101,6 @@ Scene3DRenderer::~Scene3DRenderer()
  */
 bool Scene3DRenderer::processFrame()
 {
-
-	//TODO: als we geen centers hebben van het vorige frame, k-means om mee te beginnen (en de loop track op de grond clearen?)
-	
-	if ((centers.rows == 0) && (centers.cols == 0)) // of, als dit niet werkt: if(m_current_frame == 0) 
-														// of een nieuwe variabele aanmaken: bool initialClusteringDone
-														// (en die op true zetten als we de initial clustering gedaan hebben)
-	{
-		initialSpatialVoxelClustering();
-	}
-	
-	//TODO: anders de nieuwe voxels goed labelen
-	//TODO: cluster center bepalen (mean? of ook k-means?) en loop track tekenen (lijn van oude positie naar nieuwe positie)
-	else
-	{
-		std::vector<Reconstructor::Voxel*> newVoxels = getNewVoxels();
-		for (int i = 0; i < newVoxels.size(); i++)
-		{
-			Reconstructor::Voxel voxel = *newVoxels[i];
-			float d1 = calculateDistance(voxel, Point(centers.at<float>(0, 0), centers.at <float>(0, 1)));
-			float d2 = calculateDistance(voxel, Point(centers.at<float>(1, 0), centers.at <float>(1, 1)));
-			float d3 = calculateDistance(voxel, Point(centers.at<float>(2, 0), centers.at <float>(2, 1)));
-			float d4 = calculateDistance(voxel, Point(centers.at<float>(3, 0), centers.at <float>(3, 1)));
-
-			if ((d1 < d2) && (d1 < d3) && (d1 < 4)) { /* add voxel to cluster 1*/ } 
-	        else if ((d2 < d1) && (d2 < d3) && (d2 < d4)) { /* add voxel to cluster 2 */ } 
-			else if ((d3 < d1) && (d3 < d2) && (d3 < d4)) { /* add voxel to cluster 3 */ }
-			else if ((d4 < d1) && (d4 < d3) && (d4 < d2)) { /* add voxel to cluster 4 */ }
-		}
-
-		recluster();
-		drawPaths();
-	}
-
-	previousVoxels = voxels;
-
 	for (size_t c = 0; c < m_cameras.size(); ++c)
 	{
 		if (m_current_frame == m_previous_frame + 1)
@@ -150,6 +115,43 @@ bool Scene3DRenderer::processFrame()
 		processForeground(m_cameras[c]);
 	}
 	return true;
+}
+
+void Scene3DRenderer::updateClusters()
+{
+	//TODO: als we geen centers hebben van het vorige frame, k-means om mee te beginnen (en de loop track op de grond clearen?)
+
+	if ((centers.rows == 0) && (centers.cols == 0)) // of, als dit niet werkt: if(m_current_frame == 0) 
+		// of een nieuwe variabele aanmaken: bool initialClusteringDone
+		// (en die op true zetten als we de initial clustering gedaan hebben)
+	{
+		initialSpatialVoxelClustering();
+	}
+
+	//TODO: anders de nieuwe voxels goed labelen
+	//TODO: cluster center bepalen (mean? of ook k-means?) en loop track tekenen (lijn van oude positie naar nieuwe positie)
+	else
+	{
+		std::vector<Reconstructor::Voxel*> newVoxels = getNewVoxels();
+		for (int i = 0; i < newVoxels.size(); i++)
+		{
+			Reconstructor::Voxel voxel = *newVoxels[i];
+			float d1 = calculateDistance(voxel, Point(centers.at<float>(0, 0), centers.at <float>(0, 1)));
+			float d2 = calculateDistance(voxel, Point(centers.at<float>(1, 0), centers.at <float>(1, 1)));
+			float d3 = calculateDistance(voxel, Point(centers.at<float>(2, 0), centers.at <float>(2, 1)));
+			float d4 = calculateDistance(voxel, Point(centers.at<float>(3, 0), centers.at <float>(3, 1)));
+
+			if ((d1 < d2) && (d1 < d3) && (d1 < 4)) { /* add voxel to cluster 1*/ }
+			else if ((d2 < d1) && (d2 < d3) && (d2 < d4)) { /* add voxel to cluster 2 */ }
+			else if ((d3 < d1) && (d3 < d2) && (d3 < d4)) { /* add voxel to cluster 3 */ }
+			else if ((d4 < d1) && (d4 < d3) && (d4 < d2)) { /* add voxel to cluster 4 */ }
+		}
+
+		recluster();
+		drawPaths();
+	}
+
+	previousVoxels = voxels;
 }
 
 /**
@@ -329,9 +331,12 @@ void Scene3DRenderer::initialSpatialVoxelClustering()
 */
 void Scene3DRenderer::recluster()
 {
+	labels = Mat();
+	//TODO: maak labels van de kleuren/labels van alle voxels en gebruik dan initial labels
 	TermCriteria termCriteria = TermCriteria(CV_TERMCRIT_ITER, 100, 0.01);
 	int attempts = 1;
-	int flags = KMEANS_USE_INITIAL_LABELS;
+	//int flags = KMEANS_USE_INITIAL_LABELS;
+	int flags = KMEANS_PP_CENTERS;
 	voxels = m_reconstructor.getVisibleVoxels();
 	samples = Mat(voxels.size(), 2, CV_32F);
 

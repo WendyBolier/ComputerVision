@@ -79,6 +79,7 @@ namespace nl_uu_science_gmt
 		std::vector<Reconstructor::Voxel*> voxels; // Visible voxels in the current frame
 		std::vector<Reconstructor::Voxel*> previousVoxels; // Voxels that were visible in the previous frame
 		cv::Mat samples;							   // The sample voxels that are inserted in the kmeans function 
+		cv::Mat paths;								// The image that contains the tracking lines
 
 		// edge points of the virtual ground floor grid
 		std::vector<std::vector<cv::Point3i*> > m_floor_grid;

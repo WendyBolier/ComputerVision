@@ -383,13 +383,10 @@ void Scene3DRenderer::drawPaths()
 	Point c4p1 = (previousCenters.at<float>(3, 0), previousCenters.at<float>(3, 1));
 	Point c4p2 = (centers.at<float>(3, 0), centers.at<float>(3, 1));
 
-	// TO DO waarschijnlijk moeten we de lijnen uit vorige frames ook steeds opnieuw tekenen omdat die anders verdwijnen
-	// TO DO Mat img? Wat moet hier?? o_O 
-
-	/*line(?, c1p1, c1p2, Scalar(255, 20, 147), 1, 8, 0);
-	line(? , c2p1, c2p2, Scalar(255, 0, 0), 1, 8, 0);
-	line(? , c3p1, c3p2, Scalar(0, 255, 0), 1, 8, 0);
-	line(? , c4p1, c4p2, Scalar(0, 0, 255), 1, 8, 0);*/
+	line(paths, c1p1, c1p2, Scalar(255, 20, 147), 1, 8, 0);
+	line(paths, c2p1, c2p2, Scalar(255, 0, 0), 1, 8, 0);
+	line(paths, c3p1, c3p2, Scalar(0, 255, 0), 1, 8, 0);
+	line(paths, c4p1, c4p2, Scalar(0, 0, 255), 1, 8, 0);
 }
 
 

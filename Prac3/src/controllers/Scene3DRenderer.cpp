@@ -101,6 +101,7 @@ Scene3DRenderer::~Scene3DRenderer()
  */
 bool Scene3DRenderer::processFrame()
 {
+
 	//TODO: als we geen centers hebben van het vorige frame, k-means om mee te beginnen (en de loop track op de grond clearen?)
 	
 	if ((centers.rows == 0) && (centers.cols == 0)) // of, als dit niet werkt: if(m_current_frame == 0) 

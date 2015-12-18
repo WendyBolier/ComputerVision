@@ -31,6 +31,7 @@ public:
 		cv::Scalar color;                          // Color
 		std::vector<cv::Point> camera_projection;  // Projection location for camera[c]'s FoV (2D)
 		std::vector<int> valid_camera_projection;  // Flag if camera projection is in camera[c]'s FoV
+		int label;								   // Label that indicates to which cluster the voxel belongs
 	};
 
 private:
@@ -93,6 +94,8 @@ public:
 	}
 
 	int getVoxelIndex(int x, int y, int z);
+
+	int getLabel();
 };
 
 } /* namespace nl_uu_science_gmt */

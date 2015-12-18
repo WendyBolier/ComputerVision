@@ -77,6 +77,7 @@ namespace nl_uu_science_gmt
 		Mat centers;						      // Centers will contain the centers of the clusters after kmeans is executed
 		Mat previousCenters;					  // PreviousCenters will contain the centers of the clusters from the previous frame
 		std::vector<Reconstructor::Voxel*, std::allocator<Reconstructor::Voxel*>> voxels; // Visible voxels in the current frame
+		std::vector<Reconstructor::Voxel*, std::allocator<Reconstructor::Voxel*>> previousVoxels; // Voxels that were visible in the previous frame
 		Mat samples;							   // The sample voxels that are inserted in the kmeans function 
 
 		// edge points of the virtual ground floor grid

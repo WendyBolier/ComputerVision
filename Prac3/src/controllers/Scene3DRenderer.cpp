@@ -80,6 +80,7 @@ Scene3DRenderer::Scene3DRenderer(
 	Mat centers;
 	Mat previousCenters;
 	std::vector<Reconstructor::Voxel*, std::allocator<Reconstructor::Voxel*>> voxels;
+	std::vector<Reconstructor::Voxel*, std::allocator<Reconstructor::Voxel*>> previousVoxels;
 	Mat samples(voxels.size(), 2, CV_32F);
 
 	createTrackbar("Frame", VIDEO_WINDOW, &m_current_frame, m_number_of_frames - 2);
@@ -111,6 +112,7 @@ bool Scene3DRenderer::processFrame()
 	
 	if ((centers.rows == 0) && (centers.col == 0)) // of, als dit niet werkt: if(m_current_frame == 0) 
 														// of een nieuwe variabele aanmaken: bool initialClusteringDone
+														// (en die op true zetten als we de initial clustering gedaan hebben)
 	{
 		initialSpatialVoxelClustering();
 	}
@@ -138,6 +140,7 @@ bool Scene3DRenderer::processFrame()
 		drawPaths();
 	}
 
+	previousVoxels = voxels;
 
 	for (size_t c = 0; c < m_cameras.size(); ++c)
 	{
@@ -350,6 +353,16 @@ void Scene3DRenderer::recluster()
 */
 std::vector<Reconstructor::Voxel> Scene3DRenderer::getNewVoxels()
 {
+	voxels = m_reconstructor.getVisibleVoxels();
+
+	
+	// TO DO: compare the previous voxels with the new visible voxels and return the different ones 
+	
+	for (int i = 0; i < max(voxels.size(), previousVoxels.size()); i++)
+	{
+
+	}
+
 
 }
 
@@ -366,7 +379,19 @@ float Scene3DRenderer::calculateDistance(Reconstructor::Voxel v, Point p)
 */
 void Scene3DRenderer::drawPaths()
 {
-	//line(Mat& img, Point pt1, Point pt2, const Scalar& color, int thickness = 1, int lineType = 8, int shift = 0)
+	Point c1p1 = (previousCenters.at<float>(0, 0), previousCenters.at<float>(0, 1));
+	Point c1p2 = (centers.at<float>(0, 0), centers.at<float>(0, 1));
+	Point c2p1 = (previousCenters.at<float>(1, 0), previousCenters.at<float>(1, 1));
+	Point c2p2 = (centers.at<float>(1, 0), centers.at<float>(1, 1));
+	Point c3p1 = (previousCenters.at<float>(2, 0), previousCenters.at<float>(2, 1));
+	Point c3p2 = (centers.at<float>(2, 0), centers.at<float>(2, 1));
+	Point c4p1 = (previousCenters.at<float>(3, 0), previousCenters.at<float>(3, 1));
+	Point c4p2 = (centers.at<float>(3, 0), centers.at<float>(3, 1));
+	
+	// TO DO waarschijnlijk moeten we de lijnen uit vorige frames ook steeds opnieuw tekenen omdat die anders verdwijnen
+	//line(view , c1p1, c1p2, const Scalar& color, int thickness = 1, int lineType = 8, int shift = 0);
+
+	//line(view, cubePoints[0], cubePoints[1], Scalar(255, 20, 147), 1, 8, 0);
 }
 
 

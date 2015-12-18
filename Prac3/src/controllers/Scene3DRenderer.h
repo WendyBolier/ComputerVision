@@ -73,17 +73,15 @@ namespace nl_uu_science_gmt
 		int m_pv_threshold;                       // Value threshold value at previous iteration (update awareness)
 
 		int numberOfClusters;					  // Number of clusters (persons in this case)
-		Mat labels;								  // Labels will contain the labeled voxels after kmeans is executed
-		Mat centers;						      // Centers will contain the centers of the clusters after kmeans is executed
-		Mat previousCenters;					  // PreviousCenters will contain the centers of the clusters from the previous frame
-		std::vector<Reconstructor::Voxel*, std::allocator<Reconstructor::Voxel*>> voxels; // Visible voxels in the current frame
-		std::vector<Reconstructor::Voxel*, std::allocator<Reconstructor::Voxel*>> previousVoxels; // Voxels that were visible in the previous frame
-		Mat samples;							   // The sample voxels that are inserted in the kmeans function 
+		cv::Mat labels;								  // Labels will contain the labeled voxels after kmeans is executed
+		cv::Mat centers;						      // Centers will contain the centers of the clusters after kmeans is executed
+		cv::Mat previousCenters;					  // PreviousCenters will contain the centers of the clusters from the previous frame
+		std::vector<Reconstructor::Voxel*> voxels; // Visible voxels in the current frame
+		std::vector<Reconstructor::Voxel*> previousVoxels; // Voxels that were visible in the previous frame
+		cv::Mat samples;							   // The sample voxels that are inserted in the kmeans function 
 
 		// edge points of the virtual ground floor grid
 		std::vector<std::vector<cv::Point3i*> > m_floor_grid;
-
-		void createFloorGrid();
 
 #ifdef _WIN32
 		HDC _hDC;
@@ -427,11 +425,13 @@ namespace nl_uu_science_gmt
 
 		void recluster();
 
-		std::vector<Reconstructor::Voxel> Scene3DRenderer::getNewVoxels();
+		void createFloorGrid();
 
-		float Scene3DRenderer::calculateDistance(Reconstructor::Voxel v, Point p);
+		std::vector<Reconstructor::Voxel*> Scene3DRenderer::getNewVoxels();
 
-		void Scene3DRenderer::drawPaths();
+		float calculateDistance(Reconstructor::Voxel v, cv::Point p);
+
+		void drawPaths();
 	};
 
 } /* namespace nl_uu_science_gmt */

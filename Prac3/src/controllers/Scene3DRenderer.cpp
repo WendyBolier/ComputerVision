@@ -5,16 +5,15 @@
  *      Author: coert
  */
 
-#include "Scene3DRenderer.h"
-
-#include <opencv2/core/mat.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/imgproc/types_c.h>
+#include <opencv2/core/mat.hpp>
 #include <stddef.h>
 #include <string>
 
 #include "../utilities/General.h"
+#include "Scene3DRenderer.h"
 
 using namespace std;
 using namespace cv;
@@ -76,12 +75,6 @@ Scene3DRenderer::Scene3DRenderer(
 	m_pv_threshold = V;
 
 	int numberOfClusters = 4;
-	Mat labels;
-	Mat centers;
-	Mat previousCenters;
-	std::vector<Reconstructor::Voxel*, std::allocator<Reconstructor::Voxel*>> voxels;
-	std::vector<Reconstructor::Voxel*, std::allocator<Reconstructor::Voxel*>> previousVoxels;
-	Mat samples(voxels.size(), 2, CV_32F);
 
 	createTrackbar("Frame", VIDEO_WINDOW, &m_current_frame, m_number_of_frames - 2);
 	createTrackbar("H", VIDEO_WINDOW, &m_h_threshold, 255);
@@ -110,7 +103,7 @@ bool Scene3DRenderer::processFrame()
 {
 	//TODO: als we geen centers hebben van het vorige frame, k-means om mee te beginnen (en de loop track op de grond clearen?)
 	
-	if ((centers.rows == 0) && (centers.col == 0)) // of, als dit niet werkt: if(m_current_frame == 0) 
+	if ((centers.rows == 0) && (centers.cols == 0)) // of, als dit niet werkt: if(m_current_frame == 0) 
 														// of een nieuwe variabele aanmaken: bool initialClusteringDone
 														// (en die op true zetten als we de initial clustering gedaan hebben)
 	{
@@ -121,10 +114,10 @@ bool Scene3DRenderer::processFrame()
 	//TODO: cluster center bepalen (mean? of ook k-means?) en loop track tekenen (lijn van oude positie naar nieuwe positie)
 	else
 	{
-		std::vector<Reconstructor::Voxel> newVoxels = getNewVoxels();
+		std::vector<Reconstructor::Voxel*> newVoxels = getNewVoxels();
 		for (int i = 0; i < newVoxels.size(); i++)
 		{
-			Reconstructor::Voxel voxel = newVoxels[i];
+			Reconstructor::Voxel voxel = *newVoxels[i];
 			float d1 = calculateDistance(voxel, Point(centers.at<float>(0, 0), centers.at <float>(0, 1)));
 			float d2 = calculateDistance(voxel, Point(centers.at<float>(1, 0), centers.at <float>(1, 1)));
 			float d3 = calculateDistance(voxel, Point(centers.at<float>(2, 0), centers.at <float>(2, 1)));
@@ -320,6 +313,7 @@ void Scene3DRenderer::initialSpatialVoxelClustering()
 	int attempts = 3;
 	int flags = KMEANS_PP_CENTERS;
 	voxels = m_reconstructor.getVisibleVoxels();
+	samples = Mat(voxels.size(), 2, CV_32F);
 
 	for (int x = 0; x < voxels.size(); x++) {
 		samples.at<float>(x, 0) = voxels[x]->x;
@@ -338,6 +332,7 @@ void Scene3DRenderer::recluster()
 	int attempts = 1;
 	int flags = KMEANS_USE_INITIAL_LABELS;
 	voxels = m_reconstructor.getVisibleVoxels();
+	samples = Mat(voxels.size(), 2, CV_32F);
 
 	for (int x = 0; x < voxels.size(); x++) {
 		samples.at<float>(x, 0) = voxels[x]->x;
@@ -351,7 +346,7 @@ void Scene3DRenderer::recluster()
 /*
 * Returns the new voxels that have appeared
 */
-std::vector<Reconstructor::Voxel> Scene3DRenderer::getNewVoxels()
+std::vector<Reconstructor::Voxel*> Scene3DRenderer::getNewVoxels()
 {
 	voxels = m_reconstructor.getVisibleVoxels();
 
@@ -363,7 +358,7 @@ std::vector<Reconstructor::Voxel> Scene3DRenderer::getNewVoxels()
 
 	}
 
-
+	return voxels;
 }
 
 /*

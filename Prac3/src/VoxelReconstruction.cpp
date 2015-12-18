@@ -233,16 +233,16 @@ void VoxelReconstruction::initializeColorModels(Scene3DRenderer scene3d, Glut gl
 	//Execute the EM training
 	cv::EM emPerson1, emPerson2, emPerson3, emPerson4;
 	emPerson1 = cv::EM(numberOfColors, cv::EM::COV_MAT_DIAGONAL, termCriteria2);
-	std::cout << emPerson1.train(samples1, logLikelihoodsP1, labelsP1, probsP1);
+	emPerson1.train(samples1, logLikelihoodsP1, labelsP1, probsP1);
 
 	emPerson2 = cv::EM(numberOfColors, cv::EM::COV_MAT_DIAGONAL, termCriteria2);
-	std::cout << emPerson2.train(samples2, logLikelihoodsP2, labelsP2, probsP2);
+	emPerson2.train(samples2, logLikelihoodsP2, labelsP2, probsP2);
 
 	emPerson3 = cv::EM(numberOfColors, cv::EM::COV_MAT_DIAGONAL, termCriteria2);
-	std::cout << emPerson3.train(samples3, logLikelihoodsP3, labelsP3, probsP3);
+	emPerson3.train(samples3, logLikelihoodsP3, labelsP3, probsP3);
 
 	emPerson4 = cv::EM(numberOfColors, cv::EM::COV_MAT_DIAGONAL, termCriteria2);
-	std::cout << emPerson4.train(samples4, logLikelihoodsP4, labelsP4, probsP4);
+	emPerson4.train(samples4, logLikelihoodsP4, labelsP4, probsP4);
 
 	scene3d.setCurrentFrame(0);
 }

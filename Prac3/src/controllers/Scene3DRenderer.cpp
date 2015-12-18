@@ -75,6 +75,13 @@ Scene3DRenderer::Scene3DRenderer(
 	m_v_threshold = V;
 	m_pv_threshold = V;
 
+	int numberOfClusters = 4;
+	Mat labels;
+	Mat centers;
+	Mat previousCenters;
+	std::vector<Reconstructor::Voxel*, std::allocator<Reconstructor::Voxel*>> voxels;
+	Mat samples(voxels.size(), 2, CV_32F);
+
 	createTrackbar("Frame", VIDEO_WINDOW, &m_current_frame, m_number_of_frames - 2);
 	createTrackbar("H", VIDEO_WINDOW, &m_h_threshold, 255);
 	createTrackbar("S", VIDEO_WINDOW, &m_s_threshold, 255);
@@ -101,8 +108,36 @@ Scene3DRenderer::~Scene3DRenderer()
 bool Scene3DRenderer::processFrame()
 {
 	//TODO: als we geen centers hebben van het vorige frame, k-means om mee te beginnen (en de loop track op de grond clearen?)
+	
+	if ((centers.rows == 0) && (centers.col == 0)) // of, als dit niet werkt: if(m_current_frame == 0) 
+														// of een nieuwe variabele aanmaken: bool initialClusteringDone
+	{
+		initialSpatialVoxelClustering();
+	}
+	
 	//TODO: anders de nieuwe voxels goed labelen
 	//TODO: cluster center bepalen (mean? of ook k-means?) en loop track tekenen (lijn van oude positie naar nieuwe positie)
+	else
+	{
+		std::vector<Reconstructor::Voxel> newVoxels = getNewVoxels();
+		for (int i = 0; i < newVoxels.size(); i++)
+		{
+			Reconstructor::Voxel voxel = newVoxels[i];
+			float d1 = calculateDistance(voxel, Point(centers.at<float>(0, 0), centers.at <float>(0, 1)));
+			float d2 = calculateDistance(voxel, Point(centers.at<float>(1, 0), centers.at <float>(1, 1)));
+			float d3 = calculateDistance(voxel, Point(centers.at<float>(2, 0), centers.at <float>(2, 1)));
+			float d4 = calculateDistance(voxel, Point(centers.at<float>(3, 0), centers.at <float>(3, 1)));
+
+			if ((d1 < d2) && (d1 < d3) && (d1 < 4)) { /* add voxel to cluster 1*/ } 
+	        else if ((d2 < d1) && (d2 < d3) && (d2 < d4)) { /* add voxel to cluster 2 */ } 
+			else if ((d3 < d1) && (d3 < d2) && (d3 < d4)) { /* add voxel to cluster 3 */ }
+			else if ((d4 < d1) && (d4 < d3) && (d4 < d2)) { /* add voxel to cluster 4 */ }
+		}
+
+		recluster();
+		drawPaths();
+	}
+
 
 	for (size_t c = 0; c < m_cameras.size(); ++c)
 	{
@@ -272,5 +307,68 @@ void Scene3DRenderer::createFloorGrid()
 	m_floor_grid.push_back(edge3);
 	m_floor_grid.push_back(edge4);
 }
+
+/**
+* Do the initial spatial voxel clustering with KMeans
+*/
+void Scene3DRenderer::initialSpatialVoxelClustering()
+{
+	TermCriteria termCriteria = TermCriteria(CV_TERMCRIT_ITER, 10000, 0.0001);
+	int attempts = 3;
+	int flags = KMEANS_PP_CENTERS;
+	voxels = m_reconstructor.getVisibleVoxels();
+
+	for (int x = 0; x < voxels.size(); x++) {
+		samples.at<float>(x, 0) = voxels[x]->x;
+		samples.at<float>(x, 1) = voxels[x]->y;
+	}
+
+	kmeans(samples, numberOfClusters, labels, termCriteria, attempts, flags, centers);
+}
+
+/**
+* Re-­cluster the voxels based on the current labeling state.
+*/
+void Scene3DRenderer::recluster()
+{
+	TermCriteria termCriteria = TermCriteria(CV_TERMCRIT_ITER, 100, 0.01);
+	int attempts = 1;
+	int flags = KMEANS_USE_INITIAL_LABELS;
+	voxels = m_reconstructor.getVisibleVoxels();
+
+	for (int x = 0; x < voxels.size(); x++) {
+		samples.at<float>(x, 0) = voxels[x]->x;
+		samples.at<float>(x, 1) = voxels[x]->y;
+	}
+
+	previousCenters = centers;
+	kmeans(samples, numberOfClusters, labels, termCriteria, attempts, flags, centers);
+}
+
+/*
+* Returns the new voxels that have appeared
+*/
+std::vector<Reconstructor::Voxel> Scene3DRenderer::getNewVoxels()
+{
+
+}
+
+/*
+* Calculates the distance (in 2D space) between a voxel and a point 
+*/
+float Scene3DRenderer::calculateDistance(Reconstructor::Voxel v, Point p)
+{
+	return sqrt((v.x - p.x) * (v.x - p.x) + (v.y - p.y) * (v.y - p.y));
+}
+
+/*
+* Draws the walking paths of the people on the floor
+*/
+void Scene3DRenderer::drawPaths()
+{
+	//line(Mat& img, Point pt1, Point pt2, const Scalar& color, int thickness = 1, int lineType = 8, int shift = 0)
+}
+
+
 
 } /* namespace nl_uu_science_gmt */

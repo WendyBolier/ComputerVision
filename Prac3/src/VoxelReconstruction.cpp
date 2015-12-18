@@ -138,64 +138,63 @@ void VoxelReconstruction::initializeColorModels(Scene3DRenderer scene3d, Glut gl
 
 	std::vector<Reconstructor::Voxel*> voxelsPerson1, voxelsPerson2, voxelsPerson3, voxelsPerson4;
 
-	Mat samplesPerson1(0, 2, CV_32S);
-	Mat samplesPerson2(0, 2, CV_32S);
-	Mat samplesPerson3(0, 2, CV_32S);
-	Mat samplesPerson4(0, 2, CV_32S);
+	Mat samplesPerson1(0, 1, CV_8UC3);
+	Mat samplesPerson2(0, 1, CV_8UC3);
+	Mat samplesPerson3(0, 1, CV_8UC3);
+	Mat samplesPerson4(0, 1, CV_8UC3);
 
 	// Find out which voxels belong to which person 
 
 	// Create the samples for each person (from which the Gaussian mixture model will be estimated) 
 
+	vector<Camera*, std::allocator<Camera*>> cameras = scene3d.getCameras();
+	vector<Mat> frames;
+	//initialise frames of the right size
+	frames.push_back(cameras.at(0)->getFrame());
+	frames.push_back(cameras.at(1)->getFrame());
+	frames.push_back(cameras.at(2)->getFrame());
+	frames.push_back(cameras.at(3)->getFrame());
+
+	//Make frames in HSV space
+	cv::cvtColor(cameras.at(0)->getFrame(), frames[0], cv::COLOR_BGR2HSV);
+	cv::cvtColor(cameras.at(1)->getFrame(), frames[1], cv::COLOR_BGR2HSV);
+	cv::cvtColor(cameras.at(2)->getFrame(), frames[2], cv::COLOR_BGR2HSV);
+	cv::cvtColor(cameras.at(3)->getFrame(), frames[3], cv::COLOR_BGR2HSV);
+
+	//Get the colours for every pixel that's part of each person
 	for (int i = 0; i < labels.rows; i++)
 	{
 		Reconstructor::Voxel* voxel = voxels[i];
 		if (labels.at<int>(i, 0) == 0)
 		{
 			voxelsPerson1.push_back(voxel);
-			for (int k = 0; k < scene3d.getCameras().size(); k++)
-			{
-				Mat temp(1, 2, CV_32S);
-				Point p = voxel->camera_projection[k];
-				temp.at<int>(0, 0) = p.x;
-				temp.at<int>(0, 1) = p.y;
-				samplesPerson1.push_back(temp);
+			for (int k = 0; k < cameras.size(); k++) {
+				Point point = voxel->camera_projection[k];
+				samplesPerson1.push_back(frames[k].at<Vec3b>(point));
 			}
 		}
 		else if (labels.at<int>(i, 0) == 1)
 		{
 			voxelsPerson2.push_back(voxel);
-			for (int k = 0; k < scene3d.getCameras().size(); k++)
-			{
-				Mat temp(1, 2, CV_32S);
-				Point p = voxel->camera_projection[k];
-				temp.at<int>(0, 0) = p.x;
-				temp.at<int>(0, 1) = p.y;
-				samplesPerson2.push_back(temp);
+			for (int k = 0; k < cameras.size(); k++) {
+				Point point = voxel->camera_projection[k];
+				samplesPerson2.push_back(frames[k].at<Vec3b>(point));
 			}
 		}
 		else if (labels.at<int>(i, 0) == 2)
 		{
 			voxelsPerson3.push_back(voxel);
-			for (int k = 0; k < scene3d.getCameras().size(); k++)
-			{
-				Mat temp(1, 2, CV_32S);
-				Point p = voxel->camera_projection[k];
-				temp.at<int>(0, 0) = p.x;
-				temp.at<int>(0, 1) = p.y;
-				samplesPerson3.push_back(temp);
+			for (int k = 0; k < cameras.size(); k++) {
+				Point point = voxel->camera_projection[k];
+				samplesPerson3.push_back(frames[k].at<Vec3b>(point));
 			}
 		}
 		else if (labels.at<int>(i, 0) == 3)
 		{
 			voxelsPerson4.push_back(voxel);
-			for (int k = 0; k < scene3d.getCameras().size(); k++)
-			{
-				Mat temp(1, 2, CV_32S);
-				Point p = voxel->camera_projection[k];
-				temp.at<int>(0, 0) = p.x;
-				temp.at<int>(0, 1) = p.y;
-				samplesPerson4.push_back(temp);
+			for (int k = 0; k < cameras.size(); k++) {
+				Point point = voxel->camera_projection[k];
+				samplesPerson4.push_back(frames[k].at<Vec3b>(point));
 			}
 		}
 	}
@@ -218,18 +217,32 @@ void VoxelReconstruction::initializeColorModels(Scene3DRenderer scene3d, Glut gl
 	Mat probsP3(samplesPerson3.rows, numberOfColors, CV_64FC1);
 	Mat probsP4(samplesPerson4.rows, numberOfColors, CV_64FC1);
 
+	//Make floats from the uchars, so EM can work with it
+	Mat samplesFloat1, samplesFloat2, samplesFloat3, samplesFloat4;
+	samplesPerson1.convertTo(samplesFloat1, CV_32F);
+	samplesPerson2.convertTo(samplesFloat2, CV_32F);
+	samplesPerson3.convertTo(samplesFloat3, CV_32F);
+	samplesPerson4.convertTo(samplesFloat4, CV_32F);
+
+	//Get a version without channels, but with 3 columns
+	Mat samples1 = Mat(samplesPerson1.rows * samplesPerson1.cols, 3, CV_32F);
+	Mat samples2 = Mat(samplesPerson2.rows * samplesPerson2.cols, 3, CV_32F);
+	Mat samples3 = Mat(samplesPerson3.rows * samplesPerson3.cols, 3, CV_32F);
+	Mat samples4 = Mat(samplesPerson4.rows * samplesPerson4.cols, 3, CV_32F);
+
+	//Execute the EM training
 	cv::EM emPerson1, emPerson2, emPerson3, emPerson4;
 	emPerson1 = cv::EM(numberOfColors, cv::EM::COV_MAT_DIAGONAL, termCriteria2);
-	cout << emPerson1.train(samplesPerson1, logLikelihoodsP1, labelsP1, probsP1);
+	std::cout << emPerson1.train(samples1, logLikelihoodsP1, labelsP1, probsP1);
 
 	emPerson2 = cv::EM(numberOfColors, cv::EM::COV_MAT_DIAGONAL, termCriteria2);
-	cout << emPerson2.train(samplesPerson2, logLikelihoodsP2, labelsP2, probsP2);
+	std::cout << emPerson2.train(samples2, logLikelihoodsP2, labelsP2, probsP2);
 
 	emPerson3 = cv::EM(numberOfColors, cv::EM::COV_MAT_DIAGONAL, termCriteria2);
-	cout << emPerson3.train(samplesPerson3, logLikelihoodsP3, labelsP3, probsP3);
+	std::cout << emPerson3.train(samples3, logLikelihoodsP3, labelsP3, probsP3);
 
 	emPerson4 = cv::EM(numberOfColors, cv::EM::COV_MAT_DIAGONAL, termCriteria2);
-	cout << emPerson4.train(samplesPerson4, logLikelihoodsP4, labelsP4, probsP4);
+	std::cout << emPerson4.train(samples4, logLikelihoodsP4, labelsP4, probsP4);
 
 	scene3d.setCurrentFrame(0);
 }

@@ -42,7 +42,7 @@ class Camera
 	cv::Mat m_rotation_values;                       // Rotation vector (3x1)
 	cv::Mat m_translation_values;                    // Translation vector (3x1)
 
-	float m_fx, m_fy, m_cx, m_cy;                   // Focal lenghth (fx, fy), camera center (cx, cy)
+	float m_fx, m_fy, m_cx, m_cy;                    // Focal lenghth (fx, fy), camera center (cx, cy)
 
 	cv::Mat m_rt;                                    // R matrix
 	cv::Mat m_inverse_rt;                            // R's inverse matrix
@@ -51,7 +51,7 @@ class Camera
 	std::vector<cv::Point3f> m_camera_plane;         // Camera plane of view
 	std::vector<cv::Point3f> m_camera_floor;         // Projection of the camera itself onto the ground floor view
 
-	cv::Mat m_p_frame;                                 // Current video frame (image)
+	cv::Mat m_p_frame;                               // Previous video frame (image)
 	cv::Mat m_frame;                                 // Current video frame (image)
 
 	static void onMouse(int, int, int, int, void*);

@@ -100,6 +100,10 @@ Scene3DRenderer::~Scene3DRenderer()
  */
 bool Scene3DRenderer::processFrame()
 {
+	//TODO: als we geen centers hebben van het vorige frame, k-means om mee te beginnen (en de loop track op de grond clearen?)
+	//TODO: anders de nieuwe voxels goed labelen
+	//TODO: cluster center bepalen (mean? of ook k-means?) en loop track tekenen (lijn van oude positie naar nieuwe positie)
+
 	for (size_t c = 0; c < m_cameras.size(); ++c)
 	{
 		if (m_current_frame == m_previous_frame + 1)

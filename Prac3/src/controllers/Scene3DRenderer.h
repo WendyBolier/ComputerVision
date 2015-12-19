@@ -422,6 +422,11 @@ namespace nl_uu_science_gmt
 			return m_square_side_len;
 		}
 
+		cv::Mat getPaths() const
+		{
+			return paths;
+		}
+
 		void initialSpatialVoxelClustering();
 
 		void updateClusters();
@@ -430,9 +435,7 @@ namespace nl_uu_science_gmt
 
 		void createFloorGrid();
 
-		std::vector<Reconstructor::Voxel*> Scene3DRenderer::getNewVoxels();
-
-		float calculateDistance(Reconstructor::Voxel v, cv::Point p);
+		float calculateDistance(Reconstructor::Voxel v, cv::Point2f p);
 
 		void drawPaths();
 

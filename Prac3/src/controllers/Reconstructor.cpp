@@ -28,8 +28,8 @@ namespace nl_uu_science_gmt
 Reconstructor::Reconstructor(
 		const vector<Camera*> &cs) :
 				m_cameras(cs),
-				m_height(2048),
-				m_step(32)
+				m_height(4096),
+				m_step(64)
 {
 	for (size_t c = 0; c < m_cameras.size(); ++c)
 	{
@@ -41,6 +41,11 @@ Reconstructor::Reconstructor(
 
 	const size_t edge = 2 * m_height;
 	m_voxels_amount = (edge / m_step) * (edge / m_step) * (m_height / m_step);
+
+	colors.push_back(cv::Scalar(255, 0, 0, 0.5));
+	colors.push_back(cv::Scalar(0, 0, 255, 0.5));
+	colors.push_back(cv::Scalar(0, 255, 0, 0.5));
+	colors.push_back(cv::Scalar(255, 255, 0, 0.5));
 
 	initialize();
 }

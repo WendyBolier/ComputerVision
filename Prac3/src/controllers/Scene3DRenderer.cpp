@@ -11,6 +11,7 @@
 #include <opencv2/core/mat.hpp>
 #include <stddef.h>
 #include <string>
+#include <iostream>
 
 #include "../utilities/General.h"
 #include "Scene3DRenderer.h"
@@ -119,38 +120,17 @@ bool Scene3DRenderer::processFrame()
 
 void Scene3DRenderer::updateClusters()
 {
-	//TODO: als we geen centers hebben van het vorige frame, k-means om mee te beginnen (en de loop track op de grond clearen?)
-
-	if ((centers.rows == 0) && (centers.cols == 0)) // of, als dit niet werkt: if(m_current_frame == 0) 
-		// of een nieuwe variabele aanmaken: bool initialClusteringDone
-		// (en die op true zetten als we de initial clustering gedaan hebben)
+	if (centers.dims < 2)
 	{
 		initialSpatialVoxelClustering();
 	}
-
-	//TODO: anders de nieuwe voxels goed labelen
-	//TODO: cluster center bepalen (mean? of ook k-means?) en loop track tekenen (lijn van oude positie naar nieuwe positie)
 	else
 	{
-		std::vector<Reconstructor::Voxel*> newVoxels = getNewVoxels();
-		for (int i = 0; i < newVoxels.size(); i++)
-		{
-			Reconstructor::Voxel voxel = *newVoxels[i];
-			float d1 = calculateDistance(voxel, Point(centers.at<float>(0, 0), centers.at <float>(0, 1)));
-			float d2 = calculateDistance(voxel, Point(centers.at<float>(1, 0), centers.at <float>(1, 1)));
-			float d3 = calculateDistance(voxel, Point(centers.at<float>(2, 0), centers.at <float>(2, 1)));
-			float d4 = calculateDistance(voxel, Point(centers.at<float>(3, 0), centers.at <float>(3, 1)));
-
-			if ((d1 < d2) && (d1 < d3) && (d1 < 4)) { /* add voxel to cluster 1*/ }
-			else if ((d2 < d1) && (d2 < d3) && (d2 < d4)) { /* add voxel to cluster 2 */ }
-			else if ((d3 < d1) && (d3 < d2) && (d3 < d4)) { /* add voxel to cluster 3 */ }
-			else if ((d4 < d1) && (d4 < d3) && (d4 < d2)) { /* add voxel to cluster 4 */ }
-		}
+		setLabels();
 
 		recluster();
-		setLabels();
-		drawPaths();
 	}
+	drawPaths();
 
 	previousVoxels = voxels;
 }
@@ -332,18 +312,20 @@ void Scene3DRenderer::initialSpatialVoxelClustering()
 */
 void Scene3DRenderer::recluster()
 {
-	labels = Mat();
-	//TODO: maak labels van de kleuren/labels van alle voxels en gebruik dan initial labels
 	TermCriteria termCriteria = TermCriteria(CV_TERMCRIT_ITER, 100, 0.01);
 	int attempts = 1;
-	//int flags = KMEANS_USE_INITIAL_LABELS;
-	int flags = KMEANS_PP_CENTERS;
+	int flags = KMEANS_USE_INITIAL_LABELS;
 	voxels = m_reconstructor.getVisibleVoxels();
-	samples = Mat(voxels.size(), 2, CV_32F);
 
+	samples = Mat(voxels.size(), 2, CV_32F);
 	for (int x = 0; x < voxels.size(); x++) {
 		samples.at<float>(x, 0) = voxels[x]->x;
 		samples.at<float>(x, 1) = voxels[x]->y;
+	}
+
+	labels = Mat(voxels.size(), labels.cols, labels.type());
+	for (int x = 0; x < voxels.size(); x++) {
+		labels.at<int>(x, 0) = voxels[x]->label;
 	}
 
 	previousCenters = centers;
@@ -351,27 +333,9 @@ void Scene3DRenderer::recluster()
 }
 
 /*
-* Returns the new voxels that have appeared
-*/
-std::vector<Reconstructor::Voxel*> Scene3DRenderer::getNewVoxels()
-{
-	voxels = m_reconstructor.getVisibleVoxels();
-
-	
-	// TO DO: compare the previous voxels with the new visible voxels and return the different ones 
-	
-	for (int i = 0; i < max(voxels.size(), previousVoxels.size()); i++)
-	{
-
-	}
-
-	return voxels;
-}
-
-/*
 * Calculates the distance (in 2D space) between a voxel and a point 
 */
-float Scene3DRenderer::calculateDistance(Reconstructor::Voxel v, Point p)
+float Scene3DRenderer::calculateDistance(Reconstructor::Voxel v, Point2f p)
 {
 	return sqrt((v.x - p.x) * (v.x - p.x) + (v.y - p.y) * (v.y - p.y));
 }
@@ -381,6 +345,10 @@ float Scene3DRenderer::calculateDistance(Reconstructor::Voxel v, Point p)
 */
 void Scene3DRenderer::drawPaths()
 {
+	//If there are no previousCenters
+	if (previousCenters.dims < 2) {
+		return;
+	}
 	Point c1p1 = (previousCenters.at<float>(0, 0), previousCenters.at<float>(0, 1));
 	Point c1p2 = (centers.at<float>(0, 0), centers.at<float>(0, 1));
 	Point c2p1 = (previousCenters.at<float>(1, 0), previousCenters.at<float>(1, 1));
@@ -401,23 +369,30 @@ void Scene3DRenderer::drawPaths()
 */
 void Scene3DRenderer::setLabels()
 {
-	// Add labels to the voxels
-	for (int i = 0; i < labels.rows; i++)
-	{
-		for (int j = 0; j < labels.cols; j++)
-		{
-			Reconstructor::Voxel* v = voxels[i];
-			v->label = j;
-		}
-	}
-
+	std::vector<Reconstructor::Voxel*> voxels = m_reconstructor.getVoxels();
 	// Delete the labels from voxels that are not visible anymore 
-	for (int k = 0; k < m_reconstructor.getVoxels.getSize(); k++)
+	for (int k = 0; k < voxels.size(); k++)
 	{
-		Reconstructor::Voxel v = m_reconstructor.getVoxels[k];
-		if (v.visible == false)
+		Reconstructor::Voxel* v = voxels[k];
+		if (!v->visible)
 		{
-			v.label = NULL;
+			v->label = -1;
+		}
+		else if (v->label == -1) {
+			float dist1 = calculateDistance(*v, Point(centers.at<float>(0, 0), centers.at<float>(0, 1)));
+			float dist2 = calculateDistance(*v, Point(centers.at<float>(1, 0), centers.at<float>(1, 1)));
+			float dist3 = calculateDistance(*v, Point(centers.at<float>(2, 0), centers.at<float>(2, 1)));
+			float dist4 = calculateDistance(*v, Point(centers.at<float>(3, 0), centers.at<float>(3, 1)));
+			
+			float min = min(dist1, min(dist2, min(dist3, dist4)));
+			if (min == dist1)
+				v->label = 0;
+			else if (min == dist2)
+				v->label = 1;
+			else if (min == dist3)
+				v->label = 2;
+			else if (min == dist4)
+				v->label = 3;
 		}
 	}
 }

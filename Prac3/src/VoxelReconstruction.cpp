@@ -118,7 +118,7 @@ void VoxelReconstruction::initializeColorModels(Scene3DRenderer scene3d, Glut gl
 	TermCriteria termCriteria = TermCriteria(CV_TERMCRIT_ITER, 10000, 0.0001);
 	int attempts = 3;
 	int flags = KMEANS_PP_CENTERS; // see to do
-	std::vector<Reconstructor::Voxel*, std::allocator<Reconstructor::Voxel*>> voxels = scene3d.getReconstructor().getVisibleVoxels();
+	std::vector<Reconstructor::Voxel*> voxels = scene3d.getReconstructor().getVisibleVoxels();
 	Mat samples(voxels.size(), 2, CV_32F);
 
 	for (int x = 0; x < voxels.size(); x++) {
@@ -136,8 +136,6 @@ void VoxelReconstruction::initializeColorModels(Scene3DRenderer scene3d, Glut gl
 
 	*/
 
-	std::vector<Reconstructor::Voxel*> voxelsPerson1, voxelsPerson2, voxelsPerson3, voxelsPerson4;
-
 	Mat samplesPerson1(0, 1, CV_8UC3);
 	Mat samplesPerson2(0, 1, CV_8UC3);
 	Mat samplesPerson3(0, 1, CV_8UC3);
@@ -147,7 +145,7 @@ void VoxelReconstruction::initializeColorModels(Scene3DRenderer scene3d, Glut gl
 
 	// Create the samples for each person (from which the Gaussian mixture model will be estimated) 
 
-	vector<Camera*, std::allocator<Camera*>> cameras = scene3d.getCameras();
+	vector<Camera*> cameras = scene3d.getCameras();
 	vector<Mat> frames;
 	//initialise frames of the right size
 	frames.push_back(cameras.at(0)->getFrame());
@@ -161,40 +159,62 @@ void VoxelReconstruction::initializeColorModels(Scene3DRenderer scene3d, Glut gl
 	cv::cvtColor(cameras.at(2)->getFrame(), frames[2], cv::COLOR_BGR2HSV);
 	cv::cvtColor(cameras.at(3)->getFrame(), frames[3], cv::COLOR_BGR2HSV);
 
-	//Get the colours for every pixel that's part of each person
+	std::vector<std::vector<Point>> usedPixelsPerCamera;
+	for (int k = 0; k < cameras.size(); k++) {
+		usedPixelsPerCamera.push_back(std::vector<Point>());
+	}
+	std::vector<std::vector<Reconstructor::Voxel>> voxelsPerPixel;
+
+	//Get the colours for every pixel that are part of each person
 	for (int i = 0; i < labels.rows; i++)
 	{
 		Reconstructor::Voxel* voxel = voxels[i];
 		if (labels.at<int>(i, 0) == 0)
 		{
-			voxelsPerson1.push_back(voxel);
 			for (int k = 0; k < cameras.size(); k++) {
 				Point point = voxel->camera_projection[k];
-				samplesPerson1.push_back(frames[k].at<Vec3b>(point));
+
+				//If the corresponding pixel has not yet been added to the model (for occlusion)
+				if (std::find(usedPixelsPerCamera[k].begin(), usedPixelsPerCamera[k].end(), point) == usedPixelsPerCamera[k].end()) {
+					samplesPerson1.push_back(frames[k].at<Vec3b>(point));
+					usedPixelsPerCamera[k].push_back(point);
+				}
 			}
 		}
 		else if (labels.at<int>(i, 0) == 1)
 		{
-			voxelsPerson2.push_back(voxel);
 			for (int k = 0; k < cameras.size(); k++) {
 				Point point = voxel->camera_projection[k];
-				samplesPerson2.push_back(frames[k].at<Vec3b>(point));
+
+				//If the corresponding pixel has not yet been added to the model (for occlusion)
+				if (std::find(usedPixelsPerCamera[k].begin(), usedPixelsPerCamera[k].end(), point) == usedPixelsPerCamera[k].end()) {
+					samplesPerson2.push_back(frames[k].at<Vec3b>(point));
+					usedPixelsPerCamera[k].push_back(point);
+				}
 			}
 		}
 		else if (labels.at<int>(i, 0) == 2)
 		{
-			voxelsPerson3.push_back(voxel);
 			for (int k = 0; k < cameras.size(); k++) {
 				Point point = voxel->camera_projection[k];
-				samplesPerson3.push_back(frames[k].at<Vec3b>(point));
+
+				//If the corresponding pixel has not yet been added to the model (for occlusion)
+				if (std::find(usedPixelsPerCamera[k].begin(), usedPixelsPerCamera[k].end(), point) == usedPixelsPerCamera[k].end()) {
+					samplesPerson3.push_back(frames[k].at<Vec3b>(point));
+					usedPixelsPerCamera[k].push_back(point);
+				}
 			}
 		}
 		else if (labels.at<int>(i, 0) == 3)
 		{
-			voxelsPerson4.push_back(voxel);
 			for (int k = 0; k < cameras.size(); k++) {
 				Point point = voxel->camera_projection[k];
-				samplesPerson4.push_back(frames[k].at<Vec3b>(point));
+
+				//If the corresponding pixel has not yet been added to the model (for occlusion)
+				if (std::find(usedPixelsPerCamera[k].begin(), usedPixelsPerCamera[k].end(), point) == usedPixelsPerCamera[k].end()) {
+					samplesPerson4.push_back(frames[k].at<Vec3b>(point));
+					usedPixelsPerCamera[k].push_back(point);
+				}
 			}
 		}
 	}

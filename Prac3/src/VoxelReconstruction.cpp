@@ -128,14 +128,6 @@ void VoxelReconstruction::initializeColorModels(Scene3DRenderer scene3d, Glut gl
 
 	kmeans(samples, numberOfClusters, labels, termCriteria, attempts, flags, centers);
 
-	/* To do: decide which flag to use
-
-	KMEANS_RANDOM_CENTERS Select random initial centers in each attempt.
-	KMEANS_PP_CENTERS Use kmeans++ center initialization by Arthur and Vassilvitskii [Arthur2007].
-	KMEANS_USE_INITIAL_LABELS During the first (and possibly the only) attempt, use the user-supplied labels instead of computing them from the initial centers. For the second and further attempts, use the random or semi-random centers. Use one of KMEANS_*_CENTERS flag to specify the exact method.
-
-	*/
-
 	Mat samplesPerson1(0, 1, CV_8UC3);
 	Mat samplesPerson2(0, 1, CV_8UC3);
 	Mat samplesPerson3(0, 1, CV_8UC3);

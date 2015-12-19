@@ -148,6 +148,7 @@ void Scene3DRenderer::updateClusters()
 		}
 
 		recluster();
+		setLabels();
 		drawPaths();
 	}
 
@@ -395,6 +396,31 @@ void Scene3DRenderer::drawPaths()
 	line(paths, c4p1, c4p2, Scalar(0, 0, 255), 1, 8, 0);
 }
 
+/*
+* Adds and removes labels from voxels
+*/
+void Scene3DRenderer::setLabels()
+{
+	// Add labels to the voxels
+	for (int i = 0; i < labels.rows; i++)
+	{
+		for (int j = 0; j < labels.cols; j++)
+		{
+			Reconstructor::Voxel* v = voxels[i];
+			v->label = j;
+		}
+	}
+
+	// Delete the labels from voxels that are not visible anymore 
+	for (int k = 0; k < m_reconstructor.getVoxels.getSize(); k++)
+	{
+		Reconstructor::Voxel v = m_reconstructor.getVoxels[k];
+		if (v.visible == false)
+		{
+			v.label = NULL;
+		}
+	}
+}
 
 
 } /* namespace nl_uu_science_gmt */

@@ -435,6 +435,8 @@ namespace nl_uu_science_gmt
 		float calculateDistance(Reconstructor::Voxel v, cv::Point p);
 
 		void drawPaths();
+
+		void setLabels();
 	};
 
 } /* namespace nl_uu_science_gmt */

@@ -270,7 +270,7 @@ void Scene3DRenderer::initializeColorModels() {
 
 void Scene3DRenderer::updateClusters()
 {
-	if (centers.dims < 2)
+	if (getCurrentFrame() != getPreviousFrame())
 	{
 		initialSpatialVoxelClustering();
 	}

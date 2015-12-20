@@ -620,9 +620,14 @@ void Scene3DRenderer::initialSpatialVoxelClustering()
 			}
 
 		}
-
-		cout << samplesThatBelongToPerson1 << " " << samplesThatBelongToPerson2 << " " << samplesThatBelongToPerson3 << " " << samplesThatBelongToPerson4 << std::endl;
 		
+		// extra check
+		if ((samplesThatBelongToPerson1 <= 0) || (samplesThatBelongToPerson2 <= 0) || (samplesThatBelongToPerson3 <= 0) || (samplesThatBelongToPerson4 <= 0))
+		{
+			cout << "ERROR BELOW 0" << std::endl;
+			samplesThatBelongToPerson1 = 1; samplesThatBelongToPerson2 = 2; samplesThatBelongToPerson3 = 3; samplesThatBelongToPerson4 = 4;
+		}
+
 		setLabelsAccordingToColorModel(samplesThatBelongToPerson1, samplesThatBelongToPerson2, samplesThatBelongToPerson3, samplesThatBelongToPerson4); 
 	}
 	
@@ -748,25 +753,21 @@ void Scene3DRenderer::setLabelsAccordingToColorModel(int p1, int p2, int p3, int
 {
 	for (int v = 0; v < labels.rows; v++)
 	{
-		if (labels.at<int>(v, 0) == (p1-1))
+		if (labels.at<int>(v, 0) == (p1 - 1))
 		{
 			voxels[v]->label = 1;
-			labels.at<int>(v, 0) = 1;
 		}
 		else if (labels.at<int>(v, 0) == (p2 - 1))
 		{
 			voxels[v]->label = 2;
-			labels.at<int>(v, 0) = 2;
 		}
 		else if (labels.at<int>(v, 0) == (p3 - 1))
 		{
 			voxels[v]->label = 3;
-			labels.at<int>(v, 0) = 3;
 		}
 		else if (labels.at<int>(v, 0) == (p4 - 1))
 		{
 			voxels[v]->label = 4;
-			labels.at<int>(v, 0) = 4;
 		}
 	}
 }

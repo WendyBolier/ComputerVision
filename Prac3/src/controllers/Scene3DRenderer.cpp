@@ -550,7 +550,7 @@ void Scene3DRenderer::initialSpatialVoxelClustering()
 
 	if (emPerson1.isTrained() && emPerson2.isTrained() && emPerson3.isTrained() && emPerson4.isTrained())
 	{
-	/*	double p1s1, p1s2, p1s3, p1s4, p2s1, p2s2, p2s3, p2s4, p3s1, p3s2, p3s3, p3s4, p4s1, p4s2, p4s3, p4s4;
+		double p1s1, p1s2, p1s3, p1s4, p2s1, p2s2, p2s3, p2s4, p3s1, p3s2, p3s3, p3s4, p4s1, p4s2, p4s3, p4s4;
 		p1s1 = getPrediction(emPerson1, samples1);
 		p1s2 = getPrediction(emPerson1, samples2);
 		p1s3 = getPrediction(emPerson1, samples3);
@@ -568,28 +568,43 @@ void Scene3DRenderer::initialSpatialVoxelClustering()
 		p4s3 = getPrediction(emPerson4, samples3);
 		p4s4 = getPrediction(emPerson4, samples4);
 
-		int person1SampleNr, person2SampleNr, person3SampleNr, person4SampleNr;
-		person1SampleNr = getHighestProbability(emPerson1, samples1, samples2, samples3, samples4);
-		person2SampleNr = getHighestProbability(emPerson1, samples1, samples2, samples3, samples4);
-		person3SampleNr = getHighestProbability(emPerson1, samples1, samples2, samples3, samples4);
-		person4SampleNr = getHighestProbability(emPerson1, samples1, samples2, samples3, samples4);
-		*/
-	
+		double predictions[16] = { p1s1, p1s2, p1s3, p1s4, p2s1, p2s2, p2s3, p2s4, p3s1, p3s2, p3s3, p3s4, p4s1, p4s2, p4s3, p4s4 };
+		bool everythingCombined = false;
 
-		Vec2d prediction1, prediction2, prediction3, prediction4;
-		double prediction1total = 0; 
-		for (int i = 0; i < samples1.rows; i++)
+		for (int c = 0; c < 4; c++)
 		{
-			prediction1 = emPerson1.predict(samples1.row(i));
-			prediction1total = prediction1total + prediction1[0];
-
-			cout << prediction1total << std::endl;
+			Vec2d highest = (0, 0);
+			for (int p = 0; p < 16; p++)
+			{
+				if (predictions[p] > highest[0])
+				{
+					highest[0] = predictions[p];
+					highest[1] = p;
+				}
+			}
+			if (highest[1] < 4)
+			{
+				int samplePerson1 = highest[1] + 1;
+				predictions[0] = 0; predictions[1] = 0; predictions[2] = 0; predictions[3] = 0;
+			}
+			else if (3 < highest[1] < 8)
+			{
+				int samplePerson2 = highest[1] - 3;
+				predictions[4] = 0; predictions[5] = 0; predictions[6] = 0; predictions[7] = 0;
+			}
+			else if (7 < highest[1] < 12)
+			{
+				int samplePerson3 = highest[1] - 7;
+				predictions[8] = 0; predictions[9] = 0; predictions[10] = 0; predictions[11] = 0;
+			}
+			else if (11 < highest[1])
+			{
+				int samplePerson4 = highest[1] - 11;
+				predictions[12] = 0; predictions[13] = 0; predictions[14] = 0; predictions[15] = 0;
+			}
 		}
-
-	
-		//prediction2 = emPerson2.predict(samples2);
-		//prediction3 = emPerson3.predict(samples3);
-		//prediction4 = emPerson4.predict(samples4);
+		
+		//setLabelsAccordingToColorModel(samplesPerson1, samplesPerson2, samplesPerson3, samplesPerson4); 
 	}
 	
 }
@@ -695,6 +710,22 @@ void Scene3DRenderer::setLabels()
 
 	m_reconstructor.setVisibleVoxels(visibleVoxels);
 }
+
+double Scene3DRenderer::getPrediction(EM em, Mat samples)
+{
+	Vec2d prediction;
+	double value;
+
+	for (int i = 0; i < samples.rows; i++)
+	{
+		prediction = em.predict(samples.row(i));
+		value =+ prediction[0];
+
+	}
+	return value;
+}
+
+
 
 
 } /* namespace nl_uu_science_gmt */

@@ -85,6 +85,8 @@ Scene3DRenderer::Scene3DRenderer(
 
 	createFloorGrid();
 	setTopView();
+
+	paths = Mat(getReconstructor().getSize() * 2, getReconstructor().getSize() * 2, CV_8UC3);
 }
 
 /**
@@ -675,19 +677,20 @@ void Scene3DRenderer::drawPaths()
 	if (previousCenters.dims < 2) {
 		return;
 	}
-	Point c1p1 = (previousCenters.at<float>(0, 0), previousCenters.at<float>(0, 1));
-	Point c1p2 = (centers.at<float>(0, 0), centers.at<float>(0, 1));
-	Point c2p1 = (previousCenters.at<float>(1, 0), previousCenters.at<float>(1, 1));
-	Point c2p2 = (centers.at<float>(1, 0), centers.at<float>(1, 1));
-	Point c3p1 = (previousCenters.at<float>(2, 0), previousCenters.at<float>(2, 1));
-	Point c3p2 = (centers.at<float>(2, 0), centers.at<float>(2, 1));
-	Point c4p1 = (previousCenters.at<float>(3, 0), previousCenters.at<float>(3, 1));
-	Point c4p2 = (centers.at<float>(3, 0), centers.at<float>(3, 1));
+	int size = getReconstructor().getSize();
+	Point c1p1(previousCenters.at<float>(0, 0) + size, previousCenters.at<float>(0, 1) + size);
+	Point c1p2(centers.at<float>(0, 0) + size, centers.at<float>(0, 1) + size);
+	Point c2p1(previousCenters.at<float>(1, 0) + size, previousCenters.at<float>(1, 1) + size);
+	Point c2p2(centers.at<float>(1, 0) + size, centers.at<float>(1, 1) + size);
+	Point c3p1(previousCenters.at<float>(2, 0) + size, previousCenters.at<float>(2, 1) + size);
+	Point c3p2(centers.at<float>(2, 0) + size, centers.at<float>(2, 1) + size);
+	Point c4p1(previousCenters.at<float>(3, 0) + size, previousCenters.at<float>(3, 1) + size);
+	Point c4p2(centers.at<float>(3, 0) + size, centers.at<float>(3, 1) + size);
 
-	line(paths, c1p1, c1p2, Scalar(255, 20, 147), 1, 8, 0);
-	line(paths, c2p1, c2p2, Scalar(255, 0, 0), 1, 8, 0);
-	line(paths, c3p1, c3p2, Scalar(0, 255, 0), 1, 8, 0);
-	line(paths, c4p1, c4p2, Scalar(0, 0, 255), 1, 8, 0);
+	line(paths, c1p1, c1p2, getReconstructor().getColors()[0], 20);
+	line(paths, c2p1, c2p2, getReconstructor().getColors()[1], 20);
+	line(paths, c3p1, c3p2, getReconstructor().getColors()[2], 20);
+	line(paths, c4p1, c4p2, getReconstructor().getColors()[3], 20);
 }
 
 /*

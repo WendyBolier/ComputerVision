@@ -587,11 +587,14 @@ void Glut::update(
 	if (scene3d.isQuit())
 	{
 		// Quit signaled
+		imwrite("Paths.jpg", scene3d.getPaths());
 		quit();
 	}
 	if (scene3d.getCurrentFrame() > scene3d.getNumberOfFrames() - 2)
 	{
 		// Go to the start of the video if we've moved beyond the end
+		imwrite("Paths.jpg", scene3d.getPaths());
+
 		scene3d.setCurrentFrame(0);
 		for (size_t c = 0; c < scene3d.getCameras().size(); ++c)
 			scene3d.getCameras()[c]->setVideoFrame(scene3d.getCurrentFrame());

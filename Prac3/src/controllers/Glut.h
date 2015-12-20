@@ -65,6 +65,7 @@ public:
 	void mainLoopWindows();
 #endif
 
+	void initializeColorModels();
 	static void keyboard(
 			unsigned char, int, int);
 	static void motion(

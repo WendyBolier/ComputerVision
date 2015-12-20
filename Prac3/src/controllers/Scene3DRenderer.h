@@ -93,6 +93,8 @@ namespace nl_uu_science_gmt
 			Reconstructor &, const std::vector<Camera*> &);
 		virtual ~Scene3DRenderer();
 
+		void initializeColorModels();
+
 		void processForeground(
 			Camera*);
 

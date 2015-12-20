@@ -256,6 +256,12 @@ void Glut::quit()
 	exit(EXIT_SUCCESS);
 }
 
+void Glut::initializeColorModels() {
+	m_Glut->getScene3d().setCurrentFrame(594);
+	m_Glut->update(0);
+	m_Glut->getScene3d().initializeColorModels();
+}
+
 /**
  * Handle all keyboard input
  */

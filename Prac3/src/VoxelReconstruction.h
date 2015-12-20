@@ -31,7 +31,6 @@ namespace nl_uu_science_gmt
 
 		static void showKeys();
 
-		void initializeColorModels(Scene3DRenderer scene3d, Glut glut);
 		void run(int, char**);	
 	};
 

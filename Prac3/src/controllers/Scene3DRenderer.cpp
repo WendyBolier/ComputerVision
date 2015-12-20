@@ -126,7 +126,7 @@ void Scene3DRenderer::initializeColorModels() {
 	Mat centers;
 	TermCriteria termCriteria = TermCriteria(CV_TERMCRIT_ITER, 10000, 0.0001);
 	int attempts = 3;
-	int flags = KMEANS_PP_CENTERS; // see to do
+	int flags = KMEANS_PP_CENTERS; 
 	std::vector<Reconstructor::Voxel*> voxels = getReconstructor().getVisibleVoxels();
 	Mat samples(voxels.size(), 2, CV_32F);
 
@@ -252,7 +252,7 @@ void Scene3DRenderer::initializeColorModels() {
 	Mat samples4 = Mat(samplesPerson4.rows * samplesPerson4.cols, 3, CV_32F);
 
 	//Execute the EM training
-	cv::EM emPerson1, emPerson2, emPerson3, emPerson4;
+	
 	emPerson1 = cv::EM(numberOfColors, cv::EM::COV_MAT_DIAGONAL, termCriteria2);
 	emPerson1.train(samples1, logLikelihoodsP1, labelsP1, probsP1);
 
@@ -277,11 +277,9 @@ void Scene3DRenderer::updateClusters()
 	else
 	{
 		setLabels();
-
 		recluster();
 	}
 	drawPaths();
-
 	previousVoxels = voxels;
 }
 
@@ -455,6 +453,105 @@ void Scene3DRenderer::initialSpatialVoxelClustering()
 	}
 
 	kmeans(samples, numberOfClusters, labels, termCriteria, attempts, flags, centers);
+
+	Mat samplesPerson1(0, 1, CV_8UC3);
+	Mat samplesPerson2(0, 1, CV_8UC3);
+	Mat samplesPerson3(0, 1, CV_8UC3);
+	Mat samplesPerson4(0, 1, CV_8UC3);
+
+	vector<Camera*> cameras = getCameras();
+	vector<Mat> frames;
+	//initialise frames of the right size
+	frames.push_back(cameras.at(0)->getFrame());
+	frames.push_back(cameras.at(1)->getFrame());
+	frames.push_back(cameras.at(2)->getFrame());
+	frames.push_back(cameras.at(3)->getFrame());
+
+	//Make frames in HSV space
+	cv::cvtColor(cameras.at(0)->getFrame(), frames[0], cv::COLOR_BGR2HSV);
+	cv::cvtColor(cameras.at(1)->getFrame(), frames[1], cv::COLOR_BGR2HSV);
+	cv::cvtColor(cameras.at(2)->getFrame(), frames[2], cv::COLOR_BGR2HSV);
+	cv::cvtColor(cameras.at(3)->getFrame(), frames[3], cv::COLOR_BGR2HSV);
+
+	std::vector<std::vector<Point>> usedPixelsPerCamera;
+	for (int k = 0; k < cameras.size(); k++) {
+		usedPixelsPerCamera.push_back(std::vector<Point>());
+	}
+	std::vector<std::vector<Reconstructor::Voxel>> voxelsPerPixel;
+
+	//Get the colours for every pixel that are part of each person
+	for (int i = 0; i < labels.rows; i++)
+	{
+		Reconstructor::Voxel* voxel = voxels[i];
+		if (labels.at<int>(i, 0) == 0)
+		{
+			for (int k = 0; k < cameras.size(); k++) {
+				Point point = voxel->camera_projection[k];
+
+				//If the corresponding pixel has not yet been added to the model (for occlusion)
+				if (std::find(usedPixelsPerCamera[k].begin(), usedPixelsPerCamera[k].end(), point) == usedPixelsPerCamera[k].end()) {
+					samplesPerson1.push_back(frames[k].at<Vec3b>(point));
+					usedPixelsPerCamera[k].push_back(point);
+				}
+			}
+		}
+		else if (labels.at<int>(i, 0) == 1)
+		{
+			for (int k = 0; k < cameras.size(); k++) {
+				Point point = voxel->camera_projection[k];
+
+				//If the corresponding pixel has not yet been added to the model (for occlusion)
+				if (std::find(usedPixelsPerCamera[k].begin(), usedPixelsPerCamera[k].end(), point) == usedPixelsPerCamera[k].end()) {
+					samplesPerson2.push_back(frames[k].at<Vec3b>(point));
+					usedPixelsPerCamera[k].push_back(point);
+				}
+			}
+		}
+		else if (labels.at<int>(i, 0) == 2)
+		{
+			for (int k = 0; k < cameras.size(); k++) {
+				Point point = voxel->camera_projection[k];
+
+				//If the corresponding pixel has not yet been added to the model (for occlusion)
+				if (std::find(usedPixelsPerCamera[k].begin(), usedPixelsPerCamera[k].end(), point) == usedPixelsPerCamera[k].end()) {
+					samplesPerson3.push_back(frames[k].at<Vec3b>(point));
+					usedPixelsPerCamera[k].push_back(point);
+				}
+			}
+		}
+		else if (labels.at<int>(i, 0) == 3)
+		{
+			for (int k = 0; k < cameras.size(); k++) {
+				Point point = voxel->camera_projection[k];
+
+				//If the corresponding pixel has not yet been added to the model (for occlusion)
+				if (std::find(usedPixelsPerCamera[k].begin(), usedPixelsPerCamera[k].end(), point) == usedPixelsPerCamera[k].end()) {
+					samplesPerson4.push_back(frames[k].at<Vec3b>(point));
+					usedPixelsPerCamera[k].push_back(point);
+				}
+			}
+		}
+	}
+
+	//Make floats from the uchars, so EM can work with it
+	Mat samplesFloat1, samplesFloat2, samplesFloat3, samplesFloat4;
+	samplesPerson1.convertTo(samplesFloat1, CV_32F);
+	samplesPerson2.convertTo(samplesFloat2, CV_32F);
+	samplesPerson3.convertTo(samplesFloat3, CV_32F);
+	samplesPerson4.convertTo(samplesFloat4, CV_32F);
+
+	//Get a version without channels, but with 3 columns
+	Mat samples1 = Mat(samplesPerson1.rows * samplesPerson1.cols, 3, CV_32F);
+	Mat samples2 = Mat(samplesPerson2.rows * samplesPerson2.cols, 3, CV_32F);
+	Mat samples3 = Mat(samplesPerson3.rows * samplesPerson3.cols, 3, CV_32F);
+	Mat samples4 = Mat(samplesPerson4.rows * samplesPerson4.cols, 3, CV_32F);
+
+	Vec2d prediction1, prediction2, prediction3, prediction4;
+
+	prediction1 = emPerson1.predict(samples1);
+	prediction2 = emPerson2.predict(samples2);
+	prediction3 = emPerson3.predict(samples3);
+	prediction4 = emPerson4.predict(samples4);
 }
 
 /**

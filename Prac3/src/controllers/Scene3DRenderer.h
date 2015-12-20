@@ -10,6 +10,7 @@
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/core/operations.hpp>
+#include <opencv2/ml/ml.hpp>
 #include <vector>
 #ifdef _WIN32
 #include <Windows.h>
@@ -80,6 +81,7 @@ namespace nl_uu_science_gmt
 		std::vector<Reconstructor::Voxel*> previousVoxels; // Voxels that were visible in the previous frame
 		cv::Mat samples;							   // The sample voxels that are inserted in the kmeans function 
 		cv::Mat paths;								// The image that contains the tracking lines
+		cv::EM emPerson1, emPerson2, emPerson3, emPerson4; // The color models of person 1, 2, 3 and 4
 
 		// edge points of the virtual ground floor grid
 		std::vector<std::vector<cv::Point3i*> > m_floor_grid;

@@ -569,7 +569,6 @@ void Scene3DRenderer::initialSpatialVoxelClustering()
 		p4s4 = getPrediction(emPerson4, samples4);
 
 		double predictions[16] = { p1s1, p1s2, p1s3, p1s4, p2s1, p2s2, p2s3, p2s4, p3s1, p3s2, p3s3, p3s4, p4s1, p4s2, p4s3, p4s4 };
-		bool everythingCombined = false;
 
 		for (int c = 0; c < 4; c++)
 		{
@@ -603,6 +602,8 @@ void Scene3DRenderer::initialSpatialVoxelClustering()
 				predictions[12] = 0; predictions[13] = 0; predictions[14] = 0; predictions[15] = 0;
 			}
 		}
+
+		cout << samplesPerson1 << " " << samplesPerson2 << " " << samplesPerson3 << " " << samplesPerson4 << std::endl;
 		
 		//setLabelsAccordingToColorModel(samplesPerson1, samplesPerson2, samplesPerson3, samplesPerson4); 
 	}

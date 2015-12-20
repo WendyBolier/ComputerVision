@@ -444,6 +444,10 @@ namespace nl_uu_science_gmt
 		void drawPaths();
 
 		void setLabels();
+
+		double Scene3DRenderer::getPrediction(cv::EM em, cv::Mat samples);
+
+
 	};
 
 } /* namespace nl_uu_science_gmt */

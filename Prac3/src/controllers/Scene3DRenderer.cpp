@@ -270,9 +270,11 @@ void Scene3DRenderer::initializeColorModels() {
 
 void Scene3DRenderer::updateClusters()
 {
-	if (getCurrentFrame() != getPreviousFrame())
+	if (centers.dims < 2 || getCurrentFrame() - 1 != getPreviousFrame())
 	{
 		initialSpatialVoxelClustering();
+
+		setLabels();
 	}
 	else
 	{
@@ -617,21 +619,31 @@ void Scene3DRenderer::drawPaths()
 void Scene3DRenderer::setLabels()
 {
 	std::vector<Reconstructor::Voxel*> voxels = m_reconstructor.getVoxels();
-	// Delete the labels from voxels that are not visible anymore 
+	std::vector<Reconstructor::Voxel*> visibleVoxels = m_reconstructor.getVisibleVoxels();
+
 	for (int k = 0; k < voxels.size(); k++)
 	{
 		Reconstructor::Voxel* v = voxels[k];
+		// Delete the labels from voxels that are not visible anymore 
 		if (!v->visible)
 		{
 			v->label = -1;
 		}
 		else if (v->label == -1) {
+			//set the label of the voxel to the closest cluster
 			float dist1 = calculateDistance(*v, Point(centers.at<float>(0, 0), centers.at<float>(0, 1)));
 			float dist2 = calculateDistance(*v, Point(centers.at<float>(1, 0), centers.at<float>(1, 1)));
 			float dist3 = calculateDistance(*v, Point(centers.at<float>(2, 0), centers.at<float>(2, 1)));
 			float dist4 = calculateDistance(*v, Point(centers.at<float>(3, 0), centers.at<float>(3, 1)));
 			
 			float min = min(dist1, min(dist2, min(dist3, dist4)));
+
+			if (min > 400) {
+				v->visible = false;
+				visibleVoxels.erase(std::remove(visibleVoxels.begin(), visibleVoxels.end(), v), visibleVoxels.end());
+				continue;
+			}
+
 			if (min == dist1)
 				v->label = 0;
 			else if (min == dist2)
@@ -642,6 +654,8 @@ void Scene3DRenderer::setLabels()
 				v->label = 3;
 		}
 	}
+
+	m_reconstructor.setVisibleVoxels(visibleVoxels);
 }
 
 

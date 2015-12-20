@@ -548,12 +548,50 @@ void Scene3DRenderer::initialSpatialVoxelClustering()
 	Mat samples3 = Mat(samplesPerson3.rows * samplesPerson3.cols, 3, CV_32F);
 	Mat samples4 = Mat(samplesPerson4.rows * samplesPerson4.cols, 3, CV_32F);
 
-	Vec2d prediction1, prediction2, prediction3, prediction4;
+	if (emPerson1.isTrained() && emPerson2.isTrained() && emPerson3.isTrained() && emPerson4.isTrained())
+	{
+	/*	double p1s1, p1s2, p1s3, p1s4, p2s1, p2s2, p2s3, p2s4, p3s1, p3s2, p3s3, p3s4, p4s1, p4s2, p4s3, p4s4;
+		p1s1 = getPrediction(emPerson1, samples1);
+		p1s2 = getPrediction(emPerson1, samples2);
+		p1s3 = getPrediction(emPerson1, samples3);
+		p1s4 = getPrediction(emPerson1, samples4);
+		p2s1 = getPrediction(emPerson2, samples1);
+		p2s2 = getPrediction(emPerson2, samples2);
+		p2s3 = getPrediction(emPerson2, samples3);
+		p2s4 = getPrediction(emPerson2, samples4);
+		p3s1 = getPrediction(emPerson3, samples1);
+		p3s2 = getPrediction(emPerson3, samples2);
+		p3s3 = getPrediction(emPerson3, samples3); 
+		p3s4 = getPrediction(emPerson3, samples4);
+		p4s1 = getPrediction(emPerson4, samples1);
+		p4s2 = getPrediction(emPerson4, samples2);
+		p4s3 = getPrediction(emPerson4, samples3);
+		p4s4 = getPrediction(emPerson4, samples4);
 
-	prediction1 = emPerson1.predict(samples1);
-	prediction2 = emPerson2.predict(samples2);
-	prediction3 = emPerson3.predict(samples3);
-	prediction4 = emPerson4.predict(samples4);
+		int person1SampleNr, person2SampleNr, person3SampleNr, person4SampleNr;
+		person1SampleNr = getHighestProbability(emPerson1, samples1, samples2, samples3, samples4);
+		person2SampleNr = getHighestProbability(emPerson1, samples1, samples2, samples3, samples4);
+		person3SampleNr = getHighestProbability(emPerson1, samples1, samples2, samples3, samples4);
+		person4SampleNr = getHighestProbability(emPerson1, samples1, samples2, samples3, samples4);
+		*/
+	
+
+		Vec2d prediction1, prediction2, prediction3, prediction4;
+		double prediction1total = 0; 
+		for (int i = 0; i < samples1.rows; i++)
+		{
+			prediction1 = emPerson1.predict(samples1.row(i));
+			prediction1total = prediction1total + prediction1[0];
+
+			cout << prediction1total << std::endl;
+		}
+
+	
+		//prediction2 = emPerson2.predict(samples2);
+		//prediction3 = emPerson3.predict(samples3);
+		//prediction4 = emPerson4.predict(samples4);
+	}
+	
 }
 
 /**

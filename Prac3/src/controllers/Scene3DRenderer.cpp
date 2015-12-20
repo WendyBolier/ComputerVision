@@ -573,7 +573,7 @@ void Scene3DRenderer::initialSpatialVoxelClustering()
 		for (int c = 0; c < 4; c++)
 		{
 			Vec2d highest = (0, 0);
-			for (int p = 0; p < 16; p++)
+			for (int p = 0; p < 15; p++)
 			{
 				if (predictions[p] > highest[0])
 				{
@@ -583,27 +583,31 @@ void Scene3DRenderer::initialSpatialVoxelClustering()
 			}
 			if (highest[1] < 4)
 			{
+				cout << "highest1: " << highest[1] << std::endl;
 				int samplePerson1 = highest[1] + 1;
 				predictions[0] = 0; predictions[1] = 0; predictions[2] = 0; predictions[3] = 0;
 			}
-			else if (3 < highest[1] < 8)
+			else if ((3 < highest[1]) && (highest[1] < 8))
 			{
+				cout << "highest2: " << highest[1] << std::endl;
 				int samplePerson2 = highest[1] - 3;
 				predictions[4] = 0; predictions[5] = 0; predictions[6] = 0; predictions[7] = 0;
 			}
-			else if (7 < highest[1] < 12)
+			else if ((7 < highest[1]) && (highest[1] < 12))
 			{
+				cout << "highest3: " << highest[1] << std::endl;
 				int samplePerson3 = highest[1] - 7;
 				predictions[8] = 0; predictions[9] = 0; predictions[10] = 0; predictions[11] = 0;
 			}
 			else if (11 < highest[1])
 			{
+				cout << "highest4: " << highest[1] << std::endl;
 				int samplePerson4 = highest[1] - 11;
 				predictions[12] = 0; predictions[13] = 0; predictions[14] = 0; predictions[15] = 0;
 			}
 		}
 
-		cout << samplesPerson1 << " " << samplesPerson2 << " " << samplesPerson3 << " " << samplesPerson4 << std::endl;
+		//cout << samplesPerson1 << " " << samplesPerson2 << " " << samplesPerson3 << " " << samplesPerson4 << std::endl;
 		
 		//setLabelsAccordingToColorModel(samplesPerson1, samplesPerson2, samplesPerson3, samplesPerson4); 
 	}

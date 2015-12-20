@@ -569,6 +569,7 @@ void Scene3DRenderer::initialSpatialVoxelClustering()
 		p4s4 = getPrediction(emPerson4, samples4);
 
 		double predictions[16] = { p1s1, p1s2, p1s3, p1s4, p2s1, p2s2, p2s3, p2s4, p3s1, p3s2, p3s3, p3s4, p4s1, p4s2, p4s3, p4s4 };
+		int samplesThatBelongToPerson1, samplesThatBelongToPerson2, samplesThatBelongToPerson3, samplesThatBelongToPerson4;
 
 		for (int c = 0; c < 4; c++)
 		{
@@ -583,33 +584,46 @@ void Scene3DRenderer::initialSpatialVoxelClustering()
 			}
 			if (highest[1] < 4)
 			{
-				cout << "highest1: " << highest[1] << std::endl;
-				int samplePerson1 = highest[1] + 1;
+				samplesThatBelongToPerson1 = (int)highest[1] + 1;
 				predictions[0] = 0; predictions[1] = 0; predictions[2] = 0; predictions[3] = 0;
 			}
 			else if ((3 < highest[1]) && (highest[1] < 8))
 			{
-				cout << "highest2: " << highest[1] << std::endl;
-				int samplePerson2 = highest[1] - 3;
+				samplesThatBelongToPerson2 = (int)highest[1] - 3;
 				predictions[4] = 0; predictions[5] = 0; predictions[6] = 0; predictions[7] = 0;
 			}
 			else if ((7 < highest[1]) && (highest[1] < 12))
 			{
-				cout << "highest3: " << highest[1] << std::endl;
-				int samplePerson3 = highest[1] - 7;
+				samplesThatBelongToPerson3 = (int)highest[1] - 7;
 				predictions[8] = 0; predictions[9] = 0; predictions[10] = 0; predictions[11] = 0;
 			}
 			else if (11 < highest[1])
 			{
-				cout << "highest4: " << highest[1] << std::endl;
-				int samplePerson4 = highest[1] - 11;
+				samplesThatBelongToPerson4 = (int)highest[1] - 11;
 				predictions[12] = 0; predictions[13] = 0; predictions[14] = 0; predictions[15] = 0;
 			}
+			if ((highest[1] == 0) || (highest[1] == 4) || (highest[1] == 8) || (highest[1] == 12))
+			{
+				predictions[0] = 0; predictions[4] = 0; predictions[8] = 0; predictions[12] = 0;
+			}
+			else if ((highest[1] == 1) || (highest[1] == 5) || (highest[1] == 9) || (highest[1] == 13))
+			{
+				predictions[1] = 0; predictions[5] = 0; predictions[9] = 0; predictions[13] = 0;
+			}
+			else if ((highest[1] == 2) || (highest[1] == 6) || (highest[1] == 10) || (highest[1] == 14))
+			{
+				predictions[2] = 0; predictions[6] = 0; predictions[10] = 0; predictions[14] = 0;
+			}
+			else if ((highest[1] == 3) || (highest[1] == 7) || (highest[1] == 11) || (highest[1] == 15))
+			{
+				predictions[3] = 0; predictions[7] = 0; predictions[11] = 0; predictions[15] = 0;
+			}
+
 		}
 
-		//cout << samplesPerson1 << " " << samplesPerson2 << " " << samplesPerson3 << " " << samplesPerson4 << std::endl;
+		cout << samplesThatBelongToPerson1 << " " << samplesThatBelongToPerson2 << " " << samplesThatBelongToPerson3 << " " << samplesThatBelongToPerson4 << std::endl;
 		
-		//setLabelsAccordingToColorModel(samplesPerson1, samplesPerson2, samplesPerson3, samplesPerson4); 
+		setLabelsAccordingToColorModel(samplesThatBelongToPerson1, samplesThatBelongToPerson2, samplesThatBelongToPerson3, samplesThatBelongToPerson4); 
 	}
 	
 }
@@ -730,6 +744,32 @@ double Scene3DRenderer::getPrediction(EM em, Mat samples)
 	return value / samples.rows;
 }
 
+void Scene3DRenderer::setLabelsAccordingToColorModel(int p1, int p2, int p3, int p4)
+{
+	for (int v = 0; v < labels.rows; v++)
+	{
+		if (labels.at<int>(v, 0) == (p1-1))
+		{
+			voxels[v]->label = 1;
+			labels.at<int>(v, 0) = 1;
+		}
+		else if (labels.at<int>(v, 0) == (p2 - 1))
+		{
+			voxels[v]->label = 2;
+			labels.at<int>(v, 0) = 2;
+		}
+		else if (labels.at<int>(v, 0) == (p3 - 1))
+		{
+			voxels[v]->label = 3;
+			labels.at<int>(v, 0) = 3;
+		}
+		else if (labels.at<int>(v, 0) == (p4 - 1))
+		{
+			voxels[v]->label = 4;
+			labels.at<int>(v, 0) = 4;
+		}
+	}
+}
 
 
 

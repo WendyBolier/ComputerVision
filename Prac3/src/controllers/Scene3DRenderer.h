@@ -447,6 +447,7 @@ namespace nl_uu_science_gmt
 
 		double Scene3DRenderer::getPrediction(cv::EM em, cv::Mat samples);
 
+		void Scene3DRenderer::setLabelsAccordingToColorModel(int p1, int p2, int p3, int p4);
 
 	};
 

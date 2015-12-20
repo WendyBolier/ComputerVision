@@ -719,15 +719,15 @@ void Scene3DRenderer::setLabels()
 double Scene3DRenderer::getPrediction(EM em, Mat samples)
 {
 	Vec2d prediction;
-	double value;
+	double value = 0;
 
 	for (int i = 0; i < samples.rows; i++)
 	{
 		prediction = em.predict(samples.row(i));
-		value =+ prediction[0];
+		value += prediction[0];
 
 	}
-	return value;
+	return value / samples.rows;
 }
 
 

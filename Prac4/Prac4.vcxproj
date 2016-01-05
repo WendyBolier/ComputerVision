@@ -86,7 +86,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="..\Prac3\src\main.cpp" />
+    <ClCompile Include="src\FeatureHOG.cpp" />
+    <ClCompile Include="src\MySVM.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\FaceDetector.h" />
+    <ClInclude Include="src\FeatureHOG.h" />
+    <ClInclude Include="src\MySVM.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<opencv_storage>
+<image>Positive-Detections-1.png</image>
+<ground_truth>
+  226 108 43 43 274 75 35 35 341 78 39 39 303 119 47 47 393 65 43 43 76
+  40 32 32 149 107 47 47 252 40 32 32 508 44 57 57 53 108 43 43
+  158 58 32 32 370 43 32 32 324 58 32 32
+</ground_truth>
+</opencv_storage>

@@ -773,6 +773,8 @@ void Scene3DRenderer::setLabelsAccordingToColorModel(int p1, int p2, int p3, int
 			voxels[v]->label = 4;
 		}
 	}
+
+	getReconstructor().setVisibleVoxels(voxels);
 }
 
 

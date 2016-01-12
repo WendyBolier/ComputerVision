@@ -43,7 +43,7 @@
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(OPENCV_DIR)\..\..\include;$(BOOST_DIR);$(IncludePath)</IncludePath>
     <LibraryPath>$(OPENCV_DIR)\lib;$(BOOST_DIR)lib32-msvc-11.0;$(LibraryPath)</LibraryPath>
-    <SourcePath>$(OPENCV_DIR)\..\..\..\sources\modules\core\src;$(OPENCV_DIR)\..\..\..\sources\modules\highgui\src;$(OPENCV_DIR)\..\..\..\sources\modules\imgproc\src;$(SourcePath)</SourcePath>
+    <SourcePath>$(OPENCV_DIR)\..\..\..\sources\modules\core\src;$(OPENCV_DIR)\..\..\..\sources\modules\highgui\src;$(OPENCV_DIR)\..\..\..\sources\modules\imgproc\src;$(BOOST_DIR);$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -59,11 +59,12 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>opencv_core2411d.lib;opencv_highgui2411d.lib;opencv_imgproc2411d.lib;opencv_calib3d2411d.lib;opencv_contrib2411d.lib;OpenGL32.lib;Glu32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opencv_core2411d.lib;opencv_highgui2411d.lib;opencv_imgproc2411d.lib;opencv_calib3d2411d.lib;opencv_contrib2411d.lib;opencv_ml2411d.lib;opencv_objdetect2411d.lib;opencv_photo2411d.lib;OpenGL32.lib;Glu32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -86,8 +87,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\Prac3\src\main.cpp" />
     <ClCompile Include="src\FeatureHOG.cpp" />
+    <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\MySVM.cpp" />
   </ItemGroup>
   <ItemGroup>

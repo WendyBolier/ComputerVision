@@ -18,7 +18,8 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <stddef.h>
 #include <algorithm>
-#include <cmath>
+#define _USE_MATH_DEFINES // for C++
+#include <math.h>
 #include <limits>
 
 namespace nl_uu_science_gmt

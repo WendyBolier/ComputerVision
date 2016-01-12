@@ -8,7 +8,7 @@
 #ifndef MYSVM_H_
 #define MYSVM_H_
 
-#include "opencv2/ml/ml.hpp"
+#include <opencv2/ml/ml.hpp>
 
 namespace nl_uu_science_gmt {
 

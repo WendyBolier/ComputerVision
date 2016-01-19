@@ -5,10 +5,16 @@
 *      Authors : Erik and Wendy
 */
 
-#include "src\FaceDetector.h"
+#include <iostream>
+
+#include <boost/filesystem.hpp>
+
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
-#include <iostream>
+
+#include "src\FaceDetector.h"
+
+namespace fs = boost::filesystem;
 
 namespace nl_uu_science_gmt
 {
@@ -61,11 +67,27 @@ namespace nl_uu_science_gmt
 	*         crop (true)       : crop the loaded images
 	*         scale (false)     : scale the cropped images
 	*/
-	void load(const PathVec &paths, MatVec &images, const bool is_positive, const bool do_crop, const bool do_scale)
-	{
+	void FaceDetector::load(const PathVec &paths, MatVec &images, const bool is_positive, const bool do_crop, const bool do_scale) {
 		PathVec filenames;
 
-		for (int i = 0; i < paths.size(); i++)
+		// Create iterators for iterating all entries in the directory
+		fs::directory_iterator it(m_pos_path);    // Directory iterator at the start of the directory
+		fs::directory_iterator end;									// Directory iterator by default at the end
+
+		std::cout << "Detecting all negative images without people...";
+
+		// Iterate all entries in the directory
+		while (it != end)
+		{
+			boost::filesystem::path currentPath = it->path();
+			std::string pathString = currentPath.string();
+
+			//todo: Wendy, doe je ding :D Je kan afkijken bij sortNegatives in main
+		}
+
+
+		//kaput
+		/*for (int i = 0; i < paths.size(); i++)
 		{
 			cv::glob(paths., filenames, false);
 		}
@@ -76,12 +98,13 @@ namespace nl_uu_science_gmt
 		{
 			for (size_t f = 0; f < filenames.size(); f++)
 			{
-				cv::Mat image = cv::imread(filenames[f], CV_LOAD_IMAGE_GRAYSCALE);
+				cv::Mat image = cv::imread(filenames[f].string(), CV_LOAD_IMAGE_GRAYSCALE);
 				cv::resize(image(rect), images[f], size);
 
 			}
 		}
-		
+		*/
+
 
 		
 		/*
@@ -95,7 +118,4 @@ namespace nl_uu_science_gmt
 		}
 		*/
 	}
-
-	
-		
 }

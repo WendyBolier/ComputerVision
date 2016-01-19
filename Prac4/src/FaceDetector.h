@@ -144,8 +144,8 @@ class FaceDetector
 	 *     to optimize parameters during training iterations and is not to be used as training
 	 *     data itself. Use validation only as testing input on trained classifier.
 	 *
-	 * INPUT   pos_examples: a vector of positive images (CV_8UC3)
-	 *         neg_examples: a vector of negative images (CV_8UC3)
+	 * INPUT   pos_examples: a vector of positive images (CV_8U)
+	 *         neg_examples: a vector of negative images (CV_8U)
 	 *         factor: a factor deciding the amount ratio between training and validation data (80% / 20%)
 	 * OUTPUT  Xt32F: a matrix containing all training feature descriptions (CV_32FC1/CV_64FC1). One descriptor per row.
 	 *         Xv32F: a matrix containing all validation feature descriptions (CV_32FC1/CV_64FC1). One descriptor per row.

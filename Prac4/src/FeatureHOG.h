@@ -17,8 +17,8 @@ namespace nl_uu_science_gmt
 class FeatureHOG
 {
 private:
-	uchar u_qtz_bins[512][512][2];
-	float d_qtz_mags[512][512][2];
+	uchar* u_qtz_bins;
+	float* d_qtz_mags;
 
 	const int ci_padx, ci_pady, ci_bins, ci_lbp_bins;
 	const float ct_trunc, ct_texture, ct_step;

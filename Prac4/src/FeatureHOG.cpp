@@ -18,8 +18,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <stddef.h>
 #include <algorithm>
-#define _USE_MATH_DEFINES // for C++
-#include <math.h>
+#include <cmath>
 #include <limits>
 
 namespace nl_uu_science_gmt
@@ -30,12 +29,15 @@ FeatureHOG::FeatureHOG() :
 				ci_pady(0),
 				ci_bins(9),
 				ci_lbp_bins(0),
-				ct_trunc(0.2),
-				ct_texture(0.2357),
+				ct_trunc(0.2f),
+				ct_texture(0.2357f),
 				ct_step(0),
 				cb_texture_features(true),
-				ci_depth(ci_bins * 3 + 4) // (ci_bins [contrast_insensitive]) + (2 * ci_bins [contrast_sensitive]) + (4 [texture_features])
+				ci_depth(9 * 3 + 4) // (ci_bins [contrast_insensitive]) + (2 * ci_bins [contrast_sensitive]) + (4 [texture_features])
 {
+	u_qtz_bins = new uchar[511 * 511 * 2];
+	d_qtz_mags = new float[511 * 511 * 2];
+
 	int dx, dy;
 	for (dy = -255; dy <= 255; ++dy)
 	{
@@ -45,10 +47,10 @@ FeatureHOG::FeatureHOG() :
 			const auto magnitude = std::sqrt((double) dx * dx + dy * dy) / 255.0;
 
 			// Angle in the range [-pi, pi]
-			auto angle = atan2(static_cast<double>(dy), static_cast<double>(dx));
+			auto angle = std::atan2(static_cast<double>(dy), static_cast<double>(dx));
 
 			// Convert it to the range [BINS, BINS * 3]
-			angle = angle * (ci_bins / M_PI) + ci_bins * 2;
+			angle = angle * (ci_bins / CV_PI) + ci_bins * 2;
 
 			// Convert it to the range [0, 18]
 			if (angle >= ci_bins * 2)
@@ -57,18 +59,21 @@ FeatureHOG::FeatureHOG() :
 			// Bilinear interpolation
 			const auto bin0 = (int) angle;
 			const auto bin1 = (int) (bin0 < ci_bins * 2 - 1) ? (bin0 + 1) : 0;
-			const auto alpha = angle - bin0;
+			const float alpha = (float) angle - (float) bin0;
 
-			u_qtz_bins[dy + 255][dx + 255][0] = bin0;
-			u_qtz_bins[dy + 255][dx + 255][1] = bin1;
-			d_qtz_mags[dy + 255][dx + 255][0] = (float) magnitude * (1.0 - alpha);
-			d_qtz_mags[dy + 255][dx + 255][1] = (float) magnitude * alpha;
+			const auto index = (dy + 255) * 511 * 2 + (dx + 255) * 2;
+			u_qtz_bins[index] = bin0;
+			u_qtz_bins[index + 1] = bin1;
+			d_qtz_mags[index] = (float) magnitude * (1.0f - alpha);
+			d_qtz_mags[index + 1] = (float) magnitude * alpha;
 		}
 	}
 }
 
 FeatureHOG::~FeatureHOG()
 {
+	delete u_qtz_bins;
+	delete d_qtz_mags;
 }
 
 // *************************************** Felzenszwalb HOG ***********************************************
@@ -157,10 +162,12 @@ void FeatureHOG::compute(
 
 				const auto adx = pixel_data.dx + 255;
 				const auto ady = pixel_data.dy + 255;
-				const auto bin0 = u_qtz_bins[ady][adx][0];
-				const auto bin1 = u_qtz_bins[ady][adx][1];
-				const float mag0 = d_qtz_mags[ady][adx][0];
-				const float mag1 = d_qtz_mags[ady][adx][1];
+				const auto index = ady * 511 * 2 + adx * 2;
+				const auto bin0 = u_qtz_bins[index];
+				const auto bin1 = u_qtz_bins[index + 1];
+				const float mag0 = d_qtz_mags[index];
+				const float mag1 = d_qtz_mags[index + 1];
+
 				const float vx0 = xp - ixp;
 				const float vy0 = yp - iyp;
 				const float vx1 = (float) 1.0 - vx0;
@@ -382,8 +389,8 @@ const std::vector<cv::Mat> FeatureHOG::visualise(
 	cv::minMaxLoc(w_pos, &pos_min_val, &pos_max_val);
 	cv::minMaxLoc(w_neg, &neg_min_val, &neg_max_val);
 
-	float scale = std::max(pos_max_val, neg_max_val);
-	float factor = 255 / scale;
+	auto scale = std::max<double>(pos_max_val, neg_max_val);
+	auto factor = 255 / (float) scale;
 
 	const cv::Mat pos = createVis(w_pos, cell_size, thickness);
 	cv::Mat pos_im;

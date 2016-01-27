@@ -127,7 +127,7 @@ namespace nl_uu_science_gmt
 		//! Desired positive images cropping window
 		const cv::Rect &m_crop;
 
-		//! Postive image filenames
+		//! Positive image filenames
 		PathVec m_img_fns_pos;
 		//! Negative image filenames
 		PathVec m_img_fns_neg;
@@ -135,6 +135,8 @@ namespace nl_uu_science_gmt
 		PathVec m_img_fns_neg_meta;
 		//! Training image filenames
 		PathVec m_img_fns_train;
+		//! Validation image filenames
+		PathVec m_img_fns_validation;
 		//! Testing image filenames
 		PathVec m_img_fns_test;
 
@@ -177,12 +179,12 @@ namespace nl_uu_science_gmt
 		 * Loads the image data from the disk given one or more paths
 		 *
 		 * INPUT   paths: a vector of strings to find training data
-		 * OUTPUT  images: a vector of CV_8UC3 images read from the input paths
+		 * OUTPUT  images: a vector of CV_8U images read from the input paths
 		 * FLAG    is_positive (true): loading positive or negative images
 		 *         crop (true)       : crop the loaded images
 		 *         scale (false)     : scale the cropped images
 		 */
-		void load(const PathVec &paths, MatVec &images, const bool is_positive, const bool do_crop, const bool do_scale);
+		void load(MatVec &positiveImages, MatVec &negativeImages, const bool do_crop, const bool do_scale);
 
 		/**
 		 * Normalizes the training data by decorrelation of the pixel values in an image, by subtracting its mean

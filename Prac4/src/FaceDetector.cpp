@@ -12,7 +12,7 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-#include "src\FaceDetector.h"
+#include "FaceDetector.h"
 
 namespace fs = boost::filesystem;
 
@@ -62,60 +62,56 @@ namespace nl_uu_science_gmt
 	* Loads the image data from the disk given one or more paths
 	*
 	* INPUT   paths: a vector of strings to find training data
-	* OUTPUT  images: a vector of CV_8UC3 images read from the input paths
+	* OUTPUT  images: a vector of CV_8U images read from the input paths
 	* FLAG    is_positive (true): loading positive or negative images
 	*         crop (true)       : crop the loaded images
 	*         scale (false)     : scale the cropped images
 	*/
-	void FaceDetector::load(const PathVec &paths, MatVec &images, const bool is_positive, const bool do_crop, const bool do_scale) {
-		PathVec filenames;
+	void FaceDetector::load(MatVec &positiveImages, MatVec &negativeImages, const bool do_crop, const bool do_scale) {
+		std::vector<std::string> positivesTraining;
+		std::vector<std::string> positivesValidation;
+		std::vector<std::string> negatives;
 
-		// Create iterators for iterating all entries in the directory
-		fs::directory_iterator it(m_pos_path);    // Directory iterator at the start of the directory
-		fs::directory_iterator end;									// Directory iterator by default at the end
+		//Read from the paths and load everything including the metadata paths into the PathVects
+		cv::FileStorage fs(m_pos_path, cv::FileStorage::READ);
+		fs["Training"] >> positivesTraining;
+		fs["Validation"] >> positivesValidation;
 
-		std::cout << "Detecting all negative images without people...";
-
-		// Iterate all entries in the directory
-		while (it != end)
-		{
-			boost::filesystem::path currentPath = it->path();
-			std::string pathString = currentPath.string();
-
-			//todo: Wendy, doe je ding :D Je kan afkijken bij sortNegatives in main
-		}
-
-
-		//kaput
-		/*for (int i = 0; i < paths.size(); i++)
-		{
-			cv::glob(paths., filenames, false);
-		}
-			
-		MatVec images(filenames.size());
+		fs = cv::FileStorage(m_neg_path, cv::FileStorage::READ);
+		fs["Files"] >> negatives;
 
 		if ((do_crop == true) && (do_scale == true))
 		{
-			for (size_t f = 0; f < filenames.size(); f++)
-			{
-				cv::Mat image = cv::imread(filenames[f].string(), CV_LOAD_IMAGE_GRAYSCALE);
-				cv::resize(image(rect), images[f], size);
+			std::cout << "Loading positive training images..." << std::endl;
+			//Positive training images
+			for each (std::string path in positivesTraining) {
+				cv::Mat image = cv::imread(path, CV_LOAD_IMAGE_GRAYSCALE);
+				cv::resize(image(m_crop), image, m_model_size);
 
+				positiveImages.push_back(image);
+				m_img_fns_pos.push_back(path);
+				m_img_fns_train.push_back(path);
+			}
+			std::cout << "Loading positive validation images..." << std::endl;
+			//Positive validation images
+			for each (std::string path in positivesValidation) {
+				cv::Mat image = cv::imread(path, CV_LOAD_IMAGE_GRAYSCALE);
+				cv::resize(image(m_crop), image, m_model_size);
+
+				positiveImages.push_back(image);
+				m_img_fns_pos.push_back(path);
+				m_img_fns_validation.push_back(path);
+			}
+			std::cout << "Loading negative images..." << std::endl;
+			for each (std::string path in negatives) {
+				cv::Mat image = cv::imread(path, CV_LOAD_IMAGE_GRAYSCALE);
+				//todo: crasht op croppen bij sommige plaatjes omdat ze te klein zijn (moeten we deze wel croppen)
+				//cv::resize(image(m_crop), image, m_model_size);
+
+				negativeImages.push_back(image);
+				m_img_fns_neg.push_back(path);
+				m_img_fns_neg_meta.push_back(path.replace(path.replace(23, 9, "Annotations").size() - 3, 3, "xml"));
 			}
 		}
-		*/
-
-
-		
-		/*
-		if (is_positive == true)
-		{
-			m_img_fns_pos = filenames;
-		}
-		else
-		{
-			m_img_fns_neg = filenames;
-		}
-		*/
 	}
 }

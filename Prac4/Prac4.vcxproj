@@ -87,7 +87,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="FaceDetector.cpp" />
+    <ClCompile Include="src\FaceDetector.cpp" />
     <ClCompile Include="src\FeatureHOG.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\MySVM.cpp" />

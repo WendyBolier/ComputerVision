@@ -133,10 +133,14 @@ namespace nl_uu_science_gmt
 		PathVec m_img_fns_neg;
 		//! Negative meta filenames
 		PathVec m_img_fns_neg_meta;
-		//! Training image filenames
-		PathVec m_img_fns_train;
-		//! Validation image filenames
-		PathVec m_img_fns_validation;
+		//! Positive training image filenames
+		PathVec m_img_fns_pos_train;
+		//! Positive validation image filenames
+		PathVec m_img_fns_pos_validation;
+		//! Negative training image filenames
+		PathVec m_img_fns_neg_train;
+		//! Negative validation image filenames
+		PathVec m_img_fns_neg_validation;
 		//! Testing image filenames
 		PathVec m_img_fns_test;
 
@@ -288,24 +292,37 @@ namespace nl_uu_science_gmt
 		void nonMaximaSuppression(
 			const cv::Size &image_size, CandidateVec &candidates);
 
-		/**
-		 * Getter for training paths vector
-		 *
+		/* Getter for training paths vector
 		 * OUTPUT:  Vector of training paths
 		 */
-		const PathVec& getTrainFiles() const
-		{
-			return m_img_fns_train;
+		const PathVec& getPosTrainFiles() const {
+			return m_img_fns_pos_train;
+		}
+		const PathVec& getPosValidationFiles() const {
+			return m_img_fns_pos_validation;
 		}
 
-		/**
-		 * Getter for negative paths vector
-		 *
+		/* Getter for training paths vector
+		 * OUTPUT:  Vector of training paths
+		 */
+		const PathVec& getNegTrainFiles() const {
+			return m_img_fns_neg_train;
+		}
+		const PathVec& getNegValidationFiles() const {
+			return m_img_fns_neg_validation;
+		}
+
+		/* Getter for negative paths vector
 		 * OUTPUT:  Vector of negative image paths
 		 */
-		const PathVec& getNegImageFiles() const
-		{
+		const PathVec& getPosImageFiles() const {
+			return m_img_fns_pos;
+		}
+		const PathVec& getNegImageFiles() const {
 			return m_img_fns_neg;
+		}
+		const PathVec& getNegMetaFiles() const {
+			return m_img_fns_neg_meta;
 		}
 	};
 

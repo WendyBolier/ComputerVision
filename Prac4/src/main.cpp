@@ -36,6 +36,8 @@ inline bool fileExists(const std::string& name) {
 void sortNegatives() {
 	FileStorage fs(pathUsableNegative, FileStorage::WRITE);
 
+	int counterTraining = 0, counterValidation = 0;
+
 	// First check if the start path exists
 	if (!fs::exists(pathTrainingNegativeMetadata) || !fs::is_directory(pathTrainingNegativeMetadata)) {
 		std::cout << "Given path (" << pathTrainingNegativeMetadata << ") not a directory or does not exist" << std::endl;
@@ -48,7 +50,10 @@ void sortNegatives() {
 
 	std::cout << "Detecting all negative images without people...";
 
-	vector<string> files;
+	//initialize random seed:
+	srand(time(NULL));
+
+	vector<string> trainingFiles, validationFiles;
 
 	std::string keyobj = "object";
 	std::string keyname = "name";
@@ -74,7 +79,17 @@ void sortNegatives() {
 			}
 			if (!has_person) {
 				string a = currentPath.string();
-				files.push_back(a.replace(0, 34, pathTrainingNegativeImages).replace(a.size() - 3, 3, "jpg"));
+
+				if (rand() % 100 + 1 <= 20) {
+					//A 20% chance to be validation data
+					validationFiles.push_back(a.replace(0, 34, pathTrainingNegativeImages).replace(a.size() - 4, 3, "jpg"));
+					counterValidation++;
+				}
+				else {
+					//An 80% chance to be training data
+					trainingFiles.push_back(a.replace(0, 34, pathTrainingNegativeImages).replace(a.size() - 4, 3, "jpg"));
+					counterTraining++;
+				}
 			}
 		}
 
@@ -82,8 +97,9 @@ void sortNegatives() {
 		it++;
 	}
 
-	fs << "Files" << files;
-	std::cout << "A total of " << files.size() << " truly negative images found." << std::endl;
+	fs << "Training" << trainingFiles;
+	fs << "Validation" << validationFiles;
+	std::cout << "Selected " << counterTraining << " negative training images and " << counterValidation << " negative validation images." << std::endl;
 }
 
 void sortPositives() {
@@ -121,8 +137,8 @@ void sortPositives() {
 		while (subIterator != subEnd) {
 			boost::filesystem::path imagePath = subIterator->path();
 
-			//Do something with it with a 12% chance to trim the amount down to have 2-3 times more negatives than positives
-			if (rand() % 100 + 1 <= 12) {
+			//Half of the positive images, with 6 samples per negative, makes 3 times as many negatives as positives
+			if (rand() % 100 + 1 <= 50) {
 				if (rand() % 100 + 1 <= 20) {
 					//A 20% chance to be validation data
 					validationFiles.push_back(imagePath.string());
@@ -143,7 +159,7 @@ void sortPositives() {
 
 	fs << "Training" << trainingFiles;
 	fs << "Validation" << validationFiles;
-	std::cout << "Selected " << counterTraining << " training images and " << counterValidation << " validation images." << std::endl;
+	std::cout << "Selected " << counterTraining << " positive training images and " << counterValidation << " positive validation images." << std::endl;
 }
 
 int main(int argc, char** argv) {
@@ -157,18 +173,12 @@ int main(int argc, char** argv) {
 		return EXIT_FAILURE;
 	}
 
-	cv::Rect rect(76, 94, 98, 98);
+	cv::namedWindow("Display");
+	cv::Rect rect(76, 90, 100, 100);
 	cv::Size size(20, 20);
 	FaceDetector detector(pathPositivesToUse, pathUsableNegative, size, 1, rect, 1000, 2);
 	MatVec positiveImages, negativeImages;
 	detector.load(positiveImages, negativeImages, true, true);
-
-	/*
-	TODO:
-	- If it doesn't exist yet, set up matrices with a random 80%/20% test+validation data separation and write it to a file
-		cv::FileStorage fs(s.outputFileName, FileStorage::WRITE); fs << "DataMatrix" << matrix;
-	- 
-	*/
 
 	return EXIT_SUCCESS;
 }

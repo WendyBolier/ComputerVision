@@ -67,10 +67,8 @@ namespace nl_uu_science_gmt
 	*         crop (true)       : crop the loaded images
 	*         scale (false)     : scale the cropped images
 	*/
-	void FaceDetector::load(MatVec &positiveImages, MatVec &negativeImages, const bool do_crop, const bool do_scale) {
-		std::vector<std::string> positivesTraining;
-		std::vector<std::string> positivesValidation;
-		std::vector<std::string> negatives;
+	void FaceDetector::load(MatVec &positiveSamples, MatVec &negativeSamples, const bool do_crop, const bool do_scale) {
+		std::vector<std::string> positivesTraining, positivesValidation, negativesTraining, negativesValidation;
 
 		//Read from the paths and load everything including the metadata paths into the PathVects
 		cv::FileStorage fs(m_pos_path, cv::FileStorage::READ);
@@ -78,7 +76,8 @@ namespace nl_uu_science_gmt
 		fs["Validation"] >> positivesValidation;
 
 		fs = cv::FileStorage(m_neg_path, cv::FileStorage::READ);
-		fs["Files"] >> negatives;
+		fs["Training"] >> negativesTraining;
+		fs["Validation"] >> negativesValidation;;
 
 		if ((do_crop == true) && (do_scale == true))
 		{
@@ -88,9 +87,9 @@ namespace nl_uu_science_gmt
 				cv::Mat image = cv::imread(path, CV_LOAD_IMAGE_GRAYSCALE);
 				cv::resize(image(m_crop), image, m_model_size);
 
-				positiveImages.push_back(image);
+				positiveSamples.push_back(image);
 				m_img_fns_pos.push_back(path);
-				m_img_fns_train.push_back(path);
+				m_img_fns_pos_train.push_back(path);
 			}
 			std::cout << "Loading positive validation images..." << std::endl;
 			//Positive validation images
@@ -98,20 +97,60 @@ namespace nl_uu_science_gmt
 				cv::Mat image = cv::imread(path, CV_LOAD_IMAGE_GRAYSCALE);
 				cv::resize(image(m_crop), image, m_model_size);
 
-				positiveImages.push_back(image);
+				positiveSamples.push_back(image);
 				m_img_fns_pos.push_back(path);
-				m_img_fns_validation.push_back(path);
+				m_img_fns_pos_validation.push_back(path);
 			}
-			std::cout << "Loading negative images..." << std::endl;
-			for each (std::string path in negatives) {
-				cv::Mat image = cv::imread(path, CV_LOAD_IMAGE_GRAYSCALE);
-				//todo: crasht op croppen bij sommige plaatjes omdat ze te klein zijn (moeten we deze wel croppen)
-				//cv::resize(image(m_crop), image, m_model_size);
 
-				negativeImages.push_back(image);
+			//initialize random seed:
+			srand(time(NULL));
+			int tooSmallCounter = 0;
+			cv::Rect sampleWindow = m_crop;
+			cv::Mat resized;
+			std::cout << "Loading negative training images..." << std::endl;
+			//Negative training images
+			for each (std::string path in negativesTraining) {
+				cv::Mat image = cv::imread(path, CV_LOAD_IMAGE_GRAYSCALE);
+
+				if (image.rows < m_crop.height || image.cols < m_crop.width) {
+					tooSmallCounter++;
+					continue;
+				}
+				for (int i = 0; i < 6; i++) {
+					sampleWindow.x = rand() % (image.cols - sampleWindow.width + 1);
+					sampleWindow.y = rand() % (image.rows - sampleWindow.height + 1);
+					cv::resize(image(sampleWindow), resized, m_model_size);
+
+					negativeSamples.push_back(resized);
+				}
+
 				m_img_fns_neg.push_back(path);
+				m_img_fns_neg_train.push_back(path);
 				m_img_fns_neg_meta.push_back(path.replace(path.replace(23, 9, "Annotations").size() - 3, 3, "xml"));
 			}
+			std::cout << "Loading negative validation images..." << std::endl;
+			//Negative validation images
+			for each (std::string path in negativesValidation) {
+				cv::Mat image = cv::imread(path, CV_LOAD_IMAGE_GRAYSCALE);
+
+				if (image.rows < m_crop.height || image.cols < m_crop.width) {
+					tooSmallCounter++;
+					continue;
+				}
+				for (int i = 0; i < 6; i++) {
+					sampleWindow.x = rand() % (image.cols - sampleWindow.width + 1);
+					sampleWindow.y = rand() % (image.rows - sampleWindow.height + 1);
+					cv::resize(image(sampleWindow), resized, m_model_size);
+
+					negativeSamples.push_back(resized);
+				}
+
+				m_img_fns_neg.push_back(path);
+				m_img_fns_neg_validation.push_back(path);
+				m_img_fns_neg_meta.push_back(path.replace(path.replace(23, 9, "Annotations").size() - 3, 3, "xml"));
+			}
+
+			std::cout << "Skipped " << tooSmallCounter << (tooSmallCounter == 1 ? " image because it is" : " images because they are") << " too small to crop..." << std::endl;
 		}
 	}
 }

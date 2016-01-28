@@ -10,9 +10,11 @@
 #include <boost/filesystem.hpp>
 
 #include <opencv2/core/core.hpp>
+#include <opencv2/ml/ml.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
 #include "FaceDetector.h"
+#include "MySVM.h"
 
 namespace fs = boost::filesystem;
 
@@ -150,11 +152,49 @@ namespace nl_uu_science_gmt
 
 		features = features - mean;
 		features = features / stddev;
-		return features.reshape(1, image.rows);
+		return features;
 	}
 
 	void FaceDetector::svmFaces(const MatVec &trainingData, std::vector<int> offsets, SVMModel &model) {
+		int bestC;
+		cv::Mat labels(trainingData.size(), 1, CV_8S);
+		std::cout << trainingData.size() << std::endl;
+		labels.setTo(-1);
+		cv::Mat roi(labels(cv::Rect(0, 0, 1, offsets[0])));
+		roi.setTo(1);
+		std::cout << labels.size() << std::endl;
 
+		for (int i = 1; i < 10; i++) {
+			MySVM svm;
+			cv::SVMParams params;
+			params.svm_type = cv::SVM::C_SVC;
+			params.kernel_type = cv::SVM::POLY;
+			params.degree = 1;
+			params.term_crit = cv::TermCriteria(CV_TERMCRIT_ITER, 100000, 1e-6);
+			params.C = i;
+			svm.train((CvMat*)&trainingData[0], labels, cv::Mat(), cv::Mat(), params);
+
+			//calculate hyperplane
+			const int sv_count = svm.get_support_vector_count();
+			const int sv_length = svm.get_var_count();
+			
+			CvSVMDecisionFunc *decision = svm.getDecisionFunc();
+			for (int i = 0; i < sv_count; i++) {
+				const float *support_vector = svm.get_support_vector(i);
+				const double weight = decision->alpha[i];
+				float sum = 0;
+				for (int j = 0; j < sv_length; j++) {
+					sum += support_vector[j];
+				}
+				sum *= weight;
+				model.weights[i] = sum;
+				std::cout << sv_count << std::endl;
+				std::cout << sv_length << std::endl;
+				std::cout << sum << std::endl;
+			}
+
+			//if result == better
+			//bestC = params.C;
+		}
 	}
-
 }

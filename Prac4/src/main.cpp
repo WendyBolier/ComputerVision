@@ -174,11 +174,15 @@ int main(int argc, char** argv) {
 	}
 
 	cv::namedWindow("Display");
-	cv::Rect rect(76, 90, 100, 100);
-	cv::Size size(20, 20);
-	FaceDetector detector(pathPositivesToUse, pathUsableNegative, size, 1, rect, 1000, 2);
-	MatVec positiveImages, negativeImages;
-	detector.load(positiveImages, negativeImages, true, true);
+	cv::Rect modelWindow(76, 90, 100, 100);
+	cv::Size resize(20, 20);
+	FaceDetector detector(pathPositivesToUse, pathUsableNegative, resize, 1, modelWindow);
 
+	MatVec trainingSamples, validationSamples;
+	//Load the images, normalized, and get the negative offsets in the training and validation sets, respectively
+	std::vector<int> offsets = detector.load(trainingSamples, validationSamples, true, true);
+
+	SVMModel svmModel;
+	detector.svmFaces(trainingSamples, offsets, svmModel);
 	return EXIT_SUCCESS;
 }

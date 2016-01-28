@@ -18,32 +18,8 @@ namespace fs = boost::filesystem;
 
 namespace nl_uu_science_gmt
 {
-	void FaceDetector::prepare(const MatVec &pos_examples, const MatVec &neg_examples, const double factor,
-		cv::Mat &Xt32F, cv::Mat &Xv32F, cv::Mat &Lt16S, cv::Mat &Lv16S)
-	{
-		int decider;
-		// loop through all positive images
-		for (int i = 0; i < pos_examples.size(); i++)
-		{
-			// random number between 0 and 9
-			decider = rand() % 10;
-			// if decider is 8 or 9, the image is added to the Validation Data
-			if (decider > 7)
-			{
-				//Xv32F
-				//	Lv16S
-			}
-			// else the image is added to the Training Data 
-			else
-			{
-				//Xt32F
-				//	Lt16S
-			}
-		}
-	}
-
 	FaceDetector::FaceDetector(const std::string &path_pos, const std::string &path_neg, const cv::Size &input_size,
-		const int cell_size, const cv::Rect &crop_window, const int max_images, const double pos2neg_ratio) :
+		const int cell_size, const cv::Rect &crop_window) :
 		m_pos_path(path_pos),
 		m_neg_path(path_neg),
 		m_model_size(input_size),
@@ -67,7 +43,7 @@ namespace nl_uu_science_gmt
 	*         crop (true)       : crop the loaded images
 	*         scale (false)     : scale the cropped images
 	*/
-	void FaceDetector::load(MatVec &positiveSamples, MatVec &negativeSamples, const bool do_crop, const bool do_scale) {
+	std::vector<int> FaceDetector::load(MatVec &trainingSamples, MatVec &validationSamples, const bool do_crop, const bool do_scale) {
 		std::vector<std::string> positivesTraining, positivesValidation, negativesTraining, negativesValidation;
 
 		//Read from the paths and load everything including the metadata paths into the PathVects
@@ -87,7 +63,8 @@ namespace nl_uu_science_gmt
 				cv::Mat image = cv::imread(path, CV_LOAD_IMAGE_GRAYSCALE);
 				cv::resize(image(m_crop), image, m_model_size);
 
-				positiveSamples.push_back(image);
+				//Normalize the image and add the result
+				trainingSamples.push_back(normalize(image));
 				m_img_fns_pos.push_back(path);
 				m_img_fns_pos_train.push_back(path);
 			}
@@ -97,10 +74,17 @@ namespace nl_uu_science_gmt
 				cv::Mat image = cv::imread(path, CV_LOAD_IMAGE_GRAYSCALE);
 				cv::resize(image(m_crop), image, m_model_size);
 
-				positiveSamples.push_back(image);
+				//Normalize the image and add the result
+				validationSamples.push_back(normalize(image));
 				m_img_fns_pos.push_back(path);
 				m_img_fns_pos_validation.push_back(path);
 			}
+
+			std::vector<int> offsets;
+			//Training offset
+			offsets.push_back(trainingSamples.size());
+			//Validation offset
+			offsets.push_back(validationSamples.size());
 
 			//initialize random seed:
 			srand(time(NULL));
@@ -121,12 +105,13 @@ namespace nl_uu_science_gmt
 					sampleWindow.y = rand() % (image.rows - sampleWindow.height + 1);
 					cv::resize(image(sampleWindow), resized, m_model_size);
 
-					negativeSamples.push_back(resized);
+					//Normalize the image and add the result
+					trainingSamples.push_back(normalize(resized));
 				}
 
 				m_img_fns_neg.push_back(path);
 				m_img_fns_neg_train.push_back(path);
-				m_img_fns_neg_meta.push_back(path.replace(path.replace(23, 9, "Annotations").size() - 3, 3, "xml"));
+				m_img_fns_neg_meta.push_back(path.replace(path.replace(23, 10, "Annotations").size() - 3, 3, "xml"));
 			}
 			std::cout << "Loading negative validation images..." << std::endl;
 			//Negative validation images
@@ -142,15 +127,34 @@ namespace nl_uu_science_gmt
 					sampleWindow.y = rand() % (image.rows - sampleWindow.height + 1);
 					cv::resize(image(sampleWindow), resized, m_model_size);
 
-					negativeSamples.push_back(resized);
+					//Normalize the image and add the result
+					validationSamples.push_back(normalize(resized));
 				}
 
 				m_img_fns_neg.push_back(path);
 				m_img_fns_neg_validation.push_back(path);
-				m_img_fns_neg_meta.push_back(path.replace(path.replace(23, 9, "Annotations").size() - 3, 3, "xml"));
+				m_img_fns_neg_meta.push_back(path.replace(path.replace(23, 10, "Annotations").size() - 3, 3, "xml"));
 			}
 
 			std::cout << "Skipped " << tooSmallCounter << (tooSmallCounter == 1 ? " image because it is" : " images because they are") << " too small to crop..." << std::endl;
+			return offsets;
 		}
+		return std::vector<int>();
 	}
+
+	cv::Mat FaceDetector::normalize(cv::Mat &image) {
+		cv::Mat features = image.reshape(1, 1);
+		features.convertTo(features, cv::DataType<float>::type, 1 / 255.0);
+		cv::Mat mean, stddev;
+		cv::meanStdDev(features, mean, stddev);
+
+		features = features - mean;
+		features = features / stddev;
+		return features.reshape(1, image.rows);
+	}
+
+	void FaceDetector::svmFaces(const MatVec &trainingData, std::vector<int> offsets, SVMModel &model) {
+
+	}
+
 }

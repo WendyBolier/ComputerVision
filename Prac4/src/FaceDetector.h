@@ -144,26 +144,6 @@ namespace nl_uu_science_gmt
 		//! Testing image filenames
 		PathVec m_img_fns_test;
 
-		/**
-		 * Helper method to prepare the input. The input has to be split between Training Data
-		 *     and Validation Data with a ratio of about: 80% / 20%. The validation data is used
-		 *     to optimize parameters during training iterations and is not to be used as training
-		 *     data itself. Use validation only as testing input on trained classifier.
-		 *
-		 * INPUT   pos_examples: a vector of positive images (CV_8U)
-		 *         neg_examples: a vector of negative images (CV_8U)
-		 *         factor: a factor deciding the amount ratio between training and validation data (80% / 20%)
-		 * OUTPUT  Xt32F: a matrix containing all training feature descriptions (CV_32FC1/CV_64FC1). One descriptor per row.
-		 *         Xv32F: a matrix containing all validation feature descriptions (CV_32FC1/CV_64FC1). One descriptor per row.
-		 *         Lt16S: a matrix containing all training labels. One label per row R,
-		 *             corresponding to the class of the training example at row R (CV_16S)
-		 *         Lv16S: a matrix containing all validation labels. One label per row R,
-		 *             corresponding to the class of the validation example at row R (CV_16S)
-		 */
-		void prepare(
-			const MatVec &pos_examples, const MatVec &neg_examples, const double factor,
-			cv::Mat &Xt32F, cv::Mat &Xv32F, cv::Mat &Lt16S, cv::Mat &Lv16S);
-
 	public:
 		/**
 		 * INPUT   path_pos: a path to the location containing all the positive images
@@ -176,7 +156,7 @@ namespace nl_uu_science_gmt
 		 */
 		FaceDetector(
 			const std::string &path_pos, const std::string &path_neg, const cv::Size &input_size,
-			const int cell_size, const cv::Rect &crop_window, const int max_images, const double pos2neg_ratio);
+			const int cell_size, const cv::Rect &crop_window);
 		virtual ~FaceDetector();
 
 		/**
@@ -188,7 +168,7 @@ namespace nl_uu_science_gmt
 		 *         crop (true)       : crop the loaded images
 		 *         scale (false)     : scale the cropped images
 		 */
-		void load(MatVec &positiveImages, MatVec &negativeImages, const bool do_crop, const bool do_scale);
+		std::vector<int> load(MatVec &trainingSamples, MatVec &validationSamples, const bool do_crop, const bool do_scale);
 
 		/**
 		 * Normalizes the training data by decorrelation of the pixel values in an image, by subtracting its mean
@@ -203,8 +183,7 @@ namespace nl_uu_science_gmt
 		 *         imgFl = imgFl / stddev_data;
 		 *         output[i] = imgFL.row(i).reshape(channels, image_height);
 		 */
-		void normalize(
-			const MatVec &images, MatVec &features);
+		cv::Mat normalize(cv::Mat &image);
 
 		/**
 		 * Use a feature descriptor to describe all the images and output a vector of corresponding features
@@ -247,8 +226,7 @@ namespace nl_uu_science_gmt
 		 * OUTPUT: a model containing the trained filter representations for each channel as a cv::FilterEngine,
 		 *             as well as the training scores (see struct SVMModel)
 		 */
-		void svmFaces(
-			const MatVec &pos_data, const MatVec &neg_data, SVMModel &model);
+		void svmFaces(const MatVec &trainingData, std::vector<int> offsets, SVMModel &model);
 
 		/**
 		 * Discrete Matrix Convolution of a set of filters with a feature descriptor. This should be done by

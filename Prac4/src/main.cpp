@@ -178,7 +178,7 @@ int main(int argc, char** argv) {
 	cv::Size resize(20, 20);
 	FaceDetector detector(pathPositivesToUse, pathUsableNegative, resize, 1, modelWindow);
 
-	MatVec trainingSamples, validationSamples;
+	cv::Mat trainingSamples, validationSamples;
 	//Load the images, normalized, and get the negative offsets in the training and validation sets, respectively
 	std::vector<int> offsets = detector.load(trainingSamples, validationSamples, true, true);
 

@@ -168,7 +168,7 @@ namespace nl_uu_science_gmt
 		 *         crop (true)       : crop the loaded images
 		 *         scale (false)     : scale the cropped images
 		 */
-		std::vector<int> load(MatVec &trainingSamples, MatVec &validationSamples, const bool do_crop, const bool do_scale);
+		std::vector<int> load(cv::Mat &trainingSamples, cv::Mat &validationSamples, const bool do_crop, const bool do_scale);
 
 		/**
 		 * Normalizes the training data by decorrelation of the pixel values in an image, by subtracting its mean
@@ -226,7 +226,7 @@ namespace nl_uu_science_gmt
 		 * OUTPUT: a model containing the trained filter representations for each channel as a cv::FilterEngine,
 		 *             as well as the training scores (see struct SVMModel)
 		 */
-		void svmFaces(const MatVec &trainingData, std::vector<int> offsets, SVMModel &model);
+		void svmFaces(const cv::Mat &trainingData, std::vector<int> offsets, SVMModel &model);
 
 		/**
 		 * Discrete Matrix Convolution of a set of filters with a feature descriptor. This should be done by

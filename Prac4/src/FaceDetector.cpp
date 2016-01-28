@@ -45,7 +45,7 @@ namespace nl_uu_science_gmt
 	*         crop (true)       : crop the loaded images
 	*         scale (false)     : scale the cropped images
 	*/
-	std::vector<int> FaceDetector::load(MatVec &trainingSamples, MatVec &validationSamples, const bool do_crop, const bool do_scale) {
+	std::vector<int> FaceDetector::load(cv::Mat &trainingSamples, cv::Mat &validationSamples, const bool do_crop, const bool do_scale) {
 		std::vector<std::string> positivesTraining, positivesValidation, negativesTraining, negativesValidation;
 
 		//Read from the paths and load everything including the metadata paths into the PathVects
@@ -57,8 +57,7 @@ namespace nl_uu_science_gmt
 		fs["Training"] >> negativesTraining;
 		fs["Validation"] >> negativesValidation;;
 
-		if ((do_crop == true) && (do_scale == true))
-		{
+		if ((do_crop == true) && (do_scale == true)) {
 			std::cout << "Loading positive training images..." << std::endl;
 			//Positive training images
 			for each (std::string path in positivesTraining) {
@@ -84,9 +83,9 @@ namespace nl_uu_science_gmt
 
 			std::vector<int> offsets;
 			//Training offset
-			offsets.push_back(trainingSamples.size());
+			offsets.push_back(trainingSamples.rows);
 			//Validation offset
-			offsets.push_back(validationSamples.size());
+			offsets.push_back(validationSamples.rows);
 
 			//initialize random seed:
 			srand(time(NULL));
@@ -155,14 +154,12 @@ namespace nl_uu_science_gmt
 		return features;
 	}
 
-	void FaceDetector::svmFaces(const MatVec &trainingData, std::vector<int> offsets, SVMModel &model) {
+	void FaceDetector::svmFaces(const cv::Mat &trainingData, std::vector<int> offsets, SVMModel &model) {
 		int bestC;
-		cv::Mat labels(trainingData.size(), 1, CV_8S);
-		std::cout << trainingData.size() << std::endl;
+		cv::Mat labels(trainingData.rows, 1, CV_32S);
 		labels.setTo(-1);
 		cv::Mat roi(labels(cv::Rect(0, 0, 1, offsets[0])));
 		roi.setTo(1);
-		std::cout << labels.size() << std::endl;
 
 		for (int i = 1; i < 10; i++) {
 			MySVM svm;
@@ -172,7 +169,9 @@ namespace nl_uu_science_gmt
 			params.degree = 1;
 			params.term_crit = cv::TermCriteria(CV_TERMCRIT_ITER, 100000, 1e-6);
 			params.C = i;
-			svm.train((CvMat*)&trainingData[0], labels, cv::Mat(), cv::Mat(), params);
+			std::cout << "Training with C = " << params.C << "... This might take a while...";
+			svm.train(trainingData, labels, cv::Mat(), cv::Mat(), params);
+			std::cout << "Training complete! At C = " << params.C;
 
 			//calculate hyperplane
 			const int sv_count = svm.get_support_vector_count();
@@ -182,15 +181,9 @@ namespace nl_uu_science_gmt
 			for (int i = 0; i < sv_count; i++) {
 				const float *support_vector = svm.get_support_vector(i);
 				const double weight = decision->alpha[i];
-				float sum = 0;
 				for (int j = 0; j < sv_length; j++) {
-					sum += support_vector[j];
+					model.weights[j] += support_vector[j] * weight;
 				}
-				sum *= weight;
-				model.weights[i] = sum;
-				std::cout << sv_count << std::endl;
-				std::cout << sv_length << std::endl;
-				std::cout << sum << std::endl;
 			}
 
 			//if result == better

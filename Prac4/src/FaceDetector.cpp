@@ -241,10 +241,10 @@ namespace nl_uu_science_gmt
 
 		std::cout << "The best value for C is " << bestC << std::endl;
 
-		cv::imshow("Display", (model.weights.reshape(1, m_model_size.height) * 2) + 0.6);
+		cv::imshow("Display", (model.weights.reshape(1, m_model_size.height) * 1.6) + 0.6);
 		cv::waitKey();
 		{
-			cv::Mat temp = ((model.weights.reshape(1, m_model_size.height) * 2) + 0.6) * 255;
+			cv::Mat temp = ((model.weights.reshape(1, m_model_size.height) * 1.6) + 0.6) * 255;
 			temp.convertTo(temp, CV_8U);
 			cv::imwrite("FaceReconstruction.png", temp);
 		}

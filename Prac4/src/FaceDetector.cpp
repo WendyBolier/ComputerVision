@@ -162,7 +162,7 @@ namespace nl_uu_science_gmt
 		double accuracyTraining, accuracyValidation, accuracyDifference = 100000;
 		cv::Mat trainResults, validationResults;
 
-		//Initialise the labels matrix, 1 until the negative offset, -1 after the offset
+		//Initialise the labels matrixes, 1 until the negative offset, -1 after the offset
 		cv::Mat trainingLabels(trainingData.rows, 1, CV_32F), validationLabels(validationData.rows, 1, CV_32F);
 		trainingLabels.setTo(-1);
 		cv::Mat roi(trainingLabels(cv::Rect(0, 0, 1, offsets[0])));
@@ -181,12 +181,12 @@ namespace nl_uu_science_gmt
 
 		std::cout << "Starting training... This might take a while..." << std::endl << "Get some coffee, go to the toilet, contemplate your day, finish your essay, run around the neighbourhood; Once you're done, maybe I will be too..." << std::endl;
 		
-		//With differences of around 0.001, we found 0.9 to be the best value by running the code below
-		bestC = 0.1;
+		//With differences of around 0.002, we found 0.008 to be the best value by running the code below
+		bestC = 0.008;
 
 		//Test different C values
 #ifdef _FindBestC
-		for (params.C = 0.1; params.C < 1; params.C += 0.1) {
+		for (params.C = 0.004; params.C < 0.011; params.C = params.C += 0.001) {
 #else
 		for (params.C = bestC; params.C == bestC; params.C++) {
 #endif

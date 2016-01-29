@@ -5,6 +5,9 @@
 *      Authors : Erik and Wendy
 */
 
+/* Toggles */
+//#define _FindBestC
+
 #include <iostream>
 
 #include <boost/filesystem.hpp>
@@ -179,11 +182,14 @@ namespace nl_uu_science_gmt
 		std::cout << "Starting training... This might take a while..." << std::endl << "Get some coffee, go to the toilet, contemplate your day, finish your essay, run around the neighbourhood; Once you're done, maybe I will be too..." << std::endl;
 		
 		//With differences of around 0.001, we found 0.9 to be the best value by running the code below
-		bestC = 0.9;
-		//Uncomment from here to programmatically find the best C value (which takes a loooooong time)
-		/*
+		bestC = 0.1;
+
 		//Test different C values
+#ifdef _FindBestC
 		for (params.C = 0.1; params.C < 1; params.C += 0.1) {
+#else
+		for (params.C = bestC; params.C == bestC; params.C++) {
+#endif
 			MySVM svm;
 			std::cout << "Training with C = " << params.C << "... ";
 			svm.train(trainingData, trainingLabels, cv::Mat(), cv::Mat(), params);
@@ -199,7 +205,7 @@ namespace nl_uu_science_gmt
 				const float *support_vector = svm.get_support_vector(i);
 				const double weight = decision->alpha[i];
 				for (int j = 0; j < sv_length; j++) {
-					model.weights.at<float>(j, 0) += support_vector[j] * weight;
+					model.weights.at<float>(j, 0) += support_vector[j] * -weight;
 				}
 			}
 
@@ -215,15 +221,32 @@ namespace nl_uu_science_gmt
 			double correctValidation = cv::sum(validationResults / 255)[0];
 			accuracyValidation = correctValidation / validationData.rows;
 
+			//Stop after the final training
+			if (params.C == bestC) {
+				break;
+			}
+
 			if (std::abs(accuracyTraining - accuracyValidation) < accuracyDifference) {
 				bestC = params.C;
+				accuracyDifference = std::abs(accuracyTraining - accuracyValidation);
 			}
-			accuracyDifference = std::abs(accuracyTraining - accuracyValidation);
 
-			std::cout << "Thet training accuracy is " << accuracyTraining << " and the validation accuracy is " << accuracyValidation << std::endl;
+			std::cout << "The training accuracy is " << accuracyTraining << " and the validation accuracy is " << accuracyValidation << std::endl;
+
+			//Do the final training once more with the bestC
+			if (params.C == 1) {
+				params.C = bestC;
+			}
 		}
 
-		std::cout << "The best value for C is " << bestC;
-		*/
+		std::cout << "The best value for C is " << bestC << std::endl;
+
+		cv::imshow("Display", (model.weights.reshape(1, m_model_size.height) * 2) + 0.6);
+		cv::waitKey();
+		{
+			cv::Mat temp = ((model.weights.reshape(1, m_model_size.height) * 2) + 0.6) * 255;
+			temp.convertTo(temp, CV_8U);
+			cv::imwrite("FaceReconstruction.png", temp);
+		}
 	}
 }

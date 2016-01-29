@@ -221,17 +221,17 @@ namespace nl_uu_science_gmt
 			double correctValidation = cv::sum(validationResults / 255)[0];
 			accuracyValidation = correctValidation / validationData.rows;
 
+			std::cout << "The training accuracy is " << accuracyTraining << " and the validation accuracy is " << accuracyValidation << std::endl;
+			
 			//Stop after the final training
 			if (params.C == bestC) {
 				break;
 			}
-
+			
 			if (std::abs(accuracyTraining - accuracyValidation) < accuracyDifference) {
 				bestC = params.C;
 				accuracyDifference = std::abs(accuracyTraining - accuracyValidation);
 			}
-
-			std::cout << "The training accuracy is " << accuracyTraining << " and the validation accuracy is " << accuracyValidation << std::endl;
 
 			//Do the final training once more with the bestC
 			if (params.C == 1) {

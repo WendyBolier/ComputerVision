@@ -183,6 +183,6 @@ int main(int argc, char** argv) {
 	std::vector<int> offsets = detector.load(trainingSamples, validationSamples, true, true);
 
 	SVMModel svmModel;
-	detector.svmFaces(trainingSamples, offsets, svmModel);
+	detector.svmFaces(trainingSamples, validationSamples, offsets, svmModel);
 	return EXIT_SUCCESS;
 }

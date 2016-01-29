@@ -154,40 +154,76 @@ namespace nl_uu_science_gmt
 		return features;
 	}
 
-	void FaceDetector::svmFaces(const cv::Mat &trainingData, std::vector<int> offsets, SVMModel &model) {
-		int bestC;
-		cv::Mat labels(trainingData.rows, 1, CV_32S);
-		labels.setTo(-1);
-		cv::Mat roi(labels(cv::Rect(0, 0, 1, offsets[0])));
+	void FaceDetector::svmFaces(const cv::Mat &trainingData, const cv::Mat &validationData, std::vector<int> offsets, SVMModel &model) {
+		float bestC;
+		double accuracyTraining, accuracyValidation, accuracyDifference = 100000;
+		cv::Mat trainResults, validationResults;
+
+		//Initialise the labels matrix, 1 until the negative offset, -1 after the offset
+		cv::Mat trainingLabels(trainingData.rows, 1, CV_32F), validationLabels(validationData.rows, 1, CV_32F);
+		trainingLabels.setTo(-1);
+		cv::Mat roi(trainingLabels(cv::Rect(0, 0, 1, offsets[0])));
 		roi.setTo(1);
 
-		for (int i = 1; i < 10; i++) {
-			MySVM svm;
-			cv::SVMParams params;
-			params.svm_type = cv::SVM::C_SVC;
-			params.kernel_type = cv::SVM::POLY;
-			params.degree = 1;
-			params.term_crit = cv::TermCriteria(CV_TERMCRIT_ITER, 100000, 1e-6);
-			params.C = i;
-			std::cout << "Training with C = " << params.C << "... This might take a while...";
-			svm.train(trainingData, labels, cv::Mat(), cv::Mat(), params);
-			std::cout << "Training complete! At C = " << params.C;
+		validationLabels.setTo(-1);
+		roi = cv::Mat(validationLabels(cv::Rect(0, 0, 1, offsets[1])));
+		roi.setTo(1);
 
-			//calculate hyperplane
+		//Initialise the parameters
+		cv::SVMParams params;
+		params.svm_type = cv::SVM::C_SVC;
+		params.kernel_type = cv::SVM::POLY;
+		params.degree = 1;
+		params.term_crit = cv::TermCriteria(CV_TERMCRIT_ITER, 100000, 1e-6);
+
+		std::cout << "Starting training... This might take a while..." << std::endl << "Get some coffee, go to the toilet, contemplate your day, finish your essay, run around the neighbourhood; Once you're done, maybe I will be too..." << std::endl;
+		
+		//With differences of around 0.001, we found 0.9 to be the best value by running the code below
+		bestC = 0.9;
+		//Uncomment from here to programmatically find the best C value (which takes a loooooong time)
+		/*
+		//Test different C values
+		for (params.C = 0.1; params.C < 1; params.C += 0.1) {
+			MySVM svm;
+			std::cout << "Training with C = " << params.C << "... ";
+			svm.train(trainingData, trainingLabels, cv::Mat(), cv::Mat(), params);
+			std::cout << "Training complete!" << std::endl;
+
 			const int sv_count = svm.get_support_vector_count();
 			const int sv_length = svm.get_var_count();
-			
+
 			CvSVMDecisionFunc *decision = svm.getDecisionFunc();
+			model.weights = cv::Mat(sv_length, 1, CV_32F, 0.0);
+			//Construct the weights Mat already transposed
 			for (int i = 0; i < sv_count; i++) {
 				const float *support_vector = svm.get_support_vector(i);
 				const double weight = decision->alpha[i];
 				for (int j = 0; j < sv_length; j++) {
-					model.weights[j] += support_vector[j] * weight;
+					model.weights.at<float>(j, 0) += support_vector[j] * weight;
 				}
 			}
 
-			//if result == better
-			//bestC = params.C;
+			//Set up hyperplane
+			const double bias = decision->rho;
+			model.train_scores = (trainingData * model.weights) + bias;
+			cv::compare(model.train_scores / cv::abs(model.train_scores), trainingLabels, trainResults, cv::CMP_EQ);
+			double correctTraining = cv::sum(trainResults / 255)[0];
+			accuracyTraining = correctTraining / trainingData.rows;
+
+			model.validation_scores = (validationData * model.weights) + bias;
+			cv::compare(model.validation_scores / cv::abs(model.validation_scores), validationLabels, validationResults, cv::CMP_EQ);
+			double correctValidation = cv::sum(validationResults / 255)[0];
+			accuracyValidation = correctValidation / validationData.rows;
+
+			if (std::abs(accuracyTraining - accuracyValidation) < accuracyDifference) {
+				bestC = params.C;
+			}
+			accuracyDifference = std::abs(accuracyTraining - accuracyValidation);
+
+			std::cout << "Thet training accuracy is " << accuracyTraining << " and the validation accuracy is " << accuracyValidation << std::endl;
 		}
+
+		std::cout << "The best value for C is " << bestC;
+		*/
 	}
 }

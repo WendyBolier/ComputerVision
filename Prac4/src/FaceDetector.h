@@ -49,7 +49,7 @@ struct SVMModel
 	 * per channel. A gray pixel model only has 1 channel, a HOG model has 31,
 	 * each representing a bin of a particular HOG cell
 	 */
-	std::vector<cv::Mat> weights;
+	cv::Mat weights;
 	double bias;
 
 	/*
@@ -64,6 +64,7 @@ struct SVMModel
 	 * concatenated, pos_examples first, followed by neg_examples
 	 */
 	cv::Mat train_scores;
+	cv::Mat validation_scores;
 
 	/*
 	 * The train_scores contain the scores of both positive and negative
@@ -226,7 +227,7 @@ namespace nl_uu_science_gmt
 		 * OUTPUT: a model containing the trained filter representations for each channel as a cv::FilterEngine,
 		 *             as well as the training scores (see struct SVMModel)
 		 */
-		void svmFaces(const cv::Mat &trainingData, std::vector<int> offsets, SVMModel &model);
+		void svmFaces(const cv::Mat &trainingData, const cv::Mat &validationData, std::vector<int> offsets, SVMModel &model);
 
 		/**
 		 * Discrete Matrix Convolution of a set of filters with a feature descriptor. This should be done by

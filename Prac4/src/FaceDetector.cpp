@@ -309,16 +309,6 @@ namespace nl_uu_science_gmt
 		pyramid_layer.pdf += bias;
 	}
 
-	/*
-	* Converts the Response Matrix to a set of scored Candidate detections, sorted by score (good -> bad)
-	*
-	* INPUT   pyramid: a pyramid as vector of matrices, one for every pyramid layer
-	*         threshold: a threshold above which the candidate must score to be added to candidates
-	* OUTPUT  candidates: a sorted list of candidate detections, containing the response score
-	*             from the scaled Region Of Interest corresponding to the detection position
-	*             such that the ROI has the correct detection size with regard to the pyramid
-	*             layer the detection was found at.
-	*/
 	void FaceDetector::positionalContent(const Layer &pyramid_layer, const double threshold, CandidateVec &candidates)
 	{
 		for (int i = 0; i < pyramid_layer.pdf.cols; i++) {
@@ -326,10 +316,9 @@ namespace nl_uu_science_gmt
 				if (pyramid_layer.pdf.at<double>(i, j) > threshold) {
 					Candidate c;
 					c.l = pyramid_layer.l;
-					c.ftr_roi = cv::Rect(i - (m_model_size.width / 2), j + (m_model_size.height / 2), i + (m_model_size.width / 2),
-						                 j - (m_model_size.height / 2));
-					c.img_roi = cv::Rect((i - (m_model_size.width / 2))*pyramid_layer.factor, (j + (m_model_size.height / 2))*pyramid_layer.factor,
-						                 (i + (m_model_size.width / 2))*pyramid_layer.factor, (j - (m_model_size.height / 2))*pyramid_layer.factor);
+					c.ftr_roi = cv::Rect(i - (m_model_size.width / 2), j + (m_model_size.height / 2), m_model_size.width, m_model_size.height);
+					c.img_roi = cv::Rect((i - (m_model_size.width / 2))*pyramid_layer.factor, (j + (m_model_size.height*pyramid_layer.factor)),
+						                   m_model_size.width*pyramid_layer.factor, m_model_size.height*pyramid_layer.factor);
 					c.score = pyramid_layer.pdf.at<double>(i, j);
 
 					int count = 0;
@@ -340,5 +329,39 @@ namespace nl_uu_science_gmt
 				}
 			}
 		}
+	}
+
+	void FaceDetector::nonMaximaSuppression(const cv::Size &image_size, CandidateVec &candidates)
+	{
+		// *** Even uitzoeken of dit niet overbodig is, want ik had ze al gesorteerd erin gestopt.. ***
+		std::sort(candidates.begin(), candidates.end(), [](const Candidate &a, const Candidate &b) {
+			return a.score > b.score;
+		});
+
+		cv::Mat scratch = cv::Mat::zeros(image_size, CV_8U);
+		const cv::Rect bounds = cv::Rect(0, 0, 0, 0) + image_size;
+		const double overlap = 5; // ***** we moeten hier nog een goede appropriate value kiezen ****
+		int keep = 0;
+		for (size_t n = 0; n < candidates.size(); n++) {
+			cv::Rect box = candidates[n].img_roi & bounds;
+			int scratchCount = 0;
+			for (int i = box.x; i < box.width; i++) {
+				for (int j = box.y; j < box.height; j++) {
+					scratchCount += scratch.at<int>(i, j);
+				}
+			}
+			if (scratchCount < overlap) {
+				for (int i = box.x; i < box.width; i++) {
+					for (int j = box.y; j < box.height; j++) {
+						scratch.at<int>(i, j) = 1;
+					}
+				}
+				keep++;
+			}
+			else {
+				candidates.erase(candidates.begin() + n);
+			}
+		}
+		candidates.resize(keep);
 	}
 }

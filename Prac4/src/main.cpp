@@ -182,7 +182,10 @@ int main(int argc, char** argv) {
 	//Load the images, normalized, and get the negative offsets in the training and validation sets, respectively
 	std::vector<int> offsets = detector.load(trainingSamples, validationSamples, true, true);
 
+	//Train the model
 	SVMModel svmModel;
 	detector.svmFaces(trainingSamples, validationSamples, offsets, svmModel);
+
+	//detector.createPyramid();
 	return EXIT_SUCCESS;
 }

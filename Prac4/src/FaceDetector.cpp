@@ -186,6 +186,7 @@ namespace nl_uu_science_gmt
 
 		//Test different C values
 #ifdef _FindBestC
+		//for (params.C = 0.1; params.C < 1; params.C = params.C += 0.1) {
 		for (params.C = 0.004; params.C < 0.011; params.C = params.C += 0.001) {
 #else
 		for (params.C = bestC; params.C == bestC; params.C++) {
@@ -216,6 +217,13 @@ namespace nl_uu_science_gmt
 			double correctTraining = cv::sum(trainResults / 255)[0];
 			accuracyTraining = correctTraining / trainingData.rows;
 
+			//Save the support vectors (the number is off a bit due to float rounding)
+			for (int i = 0; i < model.train_scores.rows; i++) {
+				if (abs(model.train_scores.at<float>(i, 0)) <= 1) {
+					model.support_vector_idx.emplace(i);
+				}
+			}
+
 			model.validation_scores = (validationData * model.weights) + bias;
 			cv::compare(model.validation_scores / cv::abs(model.validation_scores), validationLabels, validationResults, cv::CMP_EQ);
 			double correctValidation = cv::sum(validationResults / 255)[0];
@@ -241,12 +249,28 @@ namespace nl_uu_science_gmt
 
 		std::cout << "The best value for C is " << bestC << std::endl;
 
-		cv::imshow("Display", (model.weights.reshape(1, m_model_size.height) * 1.6) + 0.6);
+		cv::Mat reshapedWeights = model.weights.reshape(1, m_model_size.height);
+		cv::imshow("Display", (reshapedWeights * 1.6) + 0.6);
 		cv::waitKey();
 		{
-			cv::Mat temp = ((model.weights.reshape(1, m_model_size.height) * 1.6) + 0.6) * 255;
+			cv::Mat temp = ((reshapedWeights * 1.6) + 0.6) * 255;
 			temp.convertTo(temp, CV_8U);
 			cv::imwrite("FaceReconstruction.png", temp);
 		}
+
+		//Save the filter engine
+		int channels = 1; // Pixel model
+		MatVec model_channels;
+		cv::split(reshapedWeights, model_channels);
+		int type = reshapedWeights.depth();
+
+		for (size_t m = 0; m < model_channels.size(); m++) {
+			auto channel_engine = cv::createLinearFilter(type, type, model_channels[m], cv::Point(-1, -1), 0, cv::BORDER_CONSTANT, -1, cv::Scalar(0, 0, 0, 0));
+			model.engine.push_back(channel_engine);
+		}
+	}
+
+	void FaceDetector::createPyramid(const int scaleFactor, const cv::Mat &src, ImagePyramid &pyramid) {
+
 	}
 }

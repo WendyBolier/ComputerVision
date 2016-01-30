@@ -216,14 +216,14 @@ namespace nl_uu_science_gmt
 			cv::compare(model.train_scores / cv::abs(model.train_scores), trainingLabels, trainResults, cv::CMP_EQ);
 			double correctTraining = cv::sum(trainResults / 255)[0];
 			accuracyTraining = correctTraining / trainingData.rows;
-
+	
 			//Save the support vectors (the number is off a bit due to float rounding)
 			for (int i = 0; i < model.train_scores.rows; i++) {
 				if (abs(model.train_scores.at<float>(i, 0)) <= 1) {
 					model.support_vector_idx.emplace(i);
 				}
 			}
-
+			
 			model.validation_scores = (validationData * model.weights) + bias;
 			cv::compare(model.validation_scores / cv::abs(model.validation_scores), validationLabels, validationResults, cv::CMP_EQ);
 			double correctValidation = cv::sum(validationResults / 255)[0];
@@ -251,8 +251,7 @@ namespace nl_uu_science_gmt
 
 		cv::Mat reshapedWeights = model.weights.reshape(1, m_model_size.height);
 		cv::imshow("Display", (reshapedWeights * 1.6) + 0.6);
-		cv::waitKey();
-		{
+		cv::waitKey(); {
 			cv::Mat temp = ((reshapedWeights * 1.6) + 0.6) * 255;
 			temp.convertTo(temp, CV_8U);
 			cv::imwrite("FaceReconstruction.png", temp);
@@ -286,11 +285,60 @@ namespace nl_uu_science_gmt
 			layer.factor = currentScaleFactor;
 			layer.l = depth;
 			layer.features = scaled;
-			//layer.pdf = dunno & todo;
 
 			pyramid.push_back(layer);
 			currentScaleFactor *= scaleFactor;
 			depth++;
+		}
+	}
+
+	void FaceDetector::convolve(SVMModel &model, Layer &pyramid_layer)
+	{
+		const auto roi = cv::Rect(0, 0, -1, -1); // convolve the full image
+		const auto offset = cv::Point(0, 0);
+		MySVM svm;
+		const double bias = svm.getDecisionFunc()->rho;
+		Layer response;
+		for (int c = 0; c < model.engine.size(); c++) {
+			cv::Mat response;
+			model.engine[c]->apply(pyramid_layer.features, response, roi, offset, true);
+			// Sum the responses in the PDF
+			pyramid_layer.pdf += response;
+		}
+		// Add the bias to the PDF (************* NOT 100% SURE YET IF THIS IS THE RIGHT BIAS *************) 
+		pyramid_layer.pdf += bias;
+	}
+
+	/*
+	* Converts the Response Matrix to a set of scored Candidate detections, sorted by score (good -> bad)
+	*
+	* INPUT   pyramid: a pyramid as vector of matrices, one for every pyramid layer
+	*         threshold: a threshold above which the candidate must score to be added to candidates
+	* OUTPUT  candidates: a sorted list of candidate detections, containing the response score
+	*             from the scaled Region Of Interest corresponding to the detection position
+	*             such that the ROI has the correct detection size with regard to the pyramid
+	*             layer the detection was found at.
+	*/
+	void FaceDetector::positionalContent(const Layer &pyramid_layer, const double threshold, CandidateVec &candidates)
+	{
+		for (int i = 0; i < pyramid_layer.pdf.cols; i++) {
+			for (int j = 0; j < pyramid_layer.pdf.rows; j++) {
+				if (pyramid_layer.pdf.at<double>(i, j) > threshold) {
+					Candidate c;
+					c.l = pyramid_layer.l;
+					c.ftr_roi = cv::Rect(i - (m_model_size.width / 2), j + (m_model_size.height / 2), i + (m_model_size.width / 2),
+						                 j - (m_model_size.height / 2));
+					c.img_roi = cv::Rect((i - (m_model_size.width / 2))*pyramid_layer.factor, (j + (m_model_size.height / 2))*pyramid_layer.factor,
+						                 (i + (m_model_size.width / 2))*pyramid_layer.factor, (j - (m_model_size.height / 2))*pyramid_layer.factor);
+					c.score = pyramid_layer.pdf.at<double>(i, j);
+
+					int count = 0;
+					while (candidates[count].score > c.score) {
+						count++;
+					}
+					candidates.insert(candidates.begin() + count, c);
+				}
+			}
 		}
 	}
 }

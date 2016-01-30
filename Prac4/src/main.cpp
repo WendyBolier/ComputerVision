@@ -188,6 +188,15 @@ int main(int argc, char** argv) {
 
 	ImagePyramid pyramid;
 	cv::Mat img = cv::imread("data\\Test\\img1.jpg");
+	const int threshold = 2; // ****** geen idee wat hier de threshold moet zijn? nog te bepalen dus! ***** 
+	CandidateVec candidates;
 	detector.createPyramid(2, img, pyramid);
+	for (int l = 0; l < pyramid.size(); l++)
+	{
+		detector.convolve(svmModel, pyramid[l]);
+		detector.positionalContent(pyramid[l], threshold, candidates);
+	}
+	
+	
 	return EXIT_SUCCESS;
 }

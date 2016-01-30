@@ -188,29 +188,39 @@ int main(int argc, char** argv) {
 	SVMModel svmModel;
 	detector.svmFaces(trainingSamples, validationSamples, svm, offsets, svmModel);
 
-	//Create the pyramid from the source image
-	ImagePyramid pyramid;
-	cv::Mat img = cv::imread("data\\Test\\img1.jpg", CV_LOAD_IMAGE_GRAYSCALE);
-	detector.createPyramid(1.5, img, pyramid);
+	for (int imgidx = 1; imgidx <= 7; imgidx++) {
+		//There is no img3.jpg
+		if (imgidx == 3) imgidx++;
+		std::string pathSegment = imgidx == 7 ? "-test.png" : std::to_string(imgidx) + ".jpg";
 
-	//Decide the PDF per layer
-	Size size = img.size();
-	const double threshold = 0; //todo: kies goede threshold
-	CandidateVec candidates;
-	for (int l = 0; l < pyramid.size(); l++) {
-		detector.convolve(svmModel, svm, pyramid[l]);
-		detector.positionalContent(pyramid[l], threshold, candidates);
+		//Create the pyramid from the source image
+		ImagePyramid pyramid;
+		cv::Mat img = cv::imread(std::string("data\\Test\\img") + pathSegment, CV_LOAD_IMAGE_GRAYSCALE);
+		detector.createPyramid(1.5, img, pyramid);
+
+		//Decide the PDF per layer
+		Size size = img.size();
+		const double threshold = 1; //todo: kies goede threshold
+		CandidateVec candidates;
+		for (int l = 0; l < pyramid.size(); l++) {
+			detector.convolve(svmModel, svm, pyramid[l]);
+			detector.positionalContent(pyramid[l], threshold, candidates);
+		}
+		detector.nonMaximaSuppression(size, candidates);
+
+		// draw final candidates on the image
+		img = imread(std::string("data\\Test\\img") + pathSegment);
+		for (int i = 0; i < candidates.size(); i++) {
+			rectangle(img, candidates[i].img_roi, cv::Scalar(0, 255, 255), 1, 8, 0);
+		}
+		imwrite(std::string("TestResults") + pathSegment, img);
+		
+		if (img.cols > 900 || img.rows > 900) {
+			cv::resize(img, img, cv::Size(img.cols / 2, img.rows / 2));
+		}
+		imshow("Display", img);
+		waitKey();
 	}
-	detector.nonMaximaSuppression(size, candidates);
-	
-	// draw final candidates on the image
-	img = imread("data\\Test\\img1.jpg");
-	for (int i = 0; i < candidates.size(); i++) {
-		rectangle(img, candidates[i].img_roi, cv::Scalar(0, 255, 255), 1, 8, 0);
-	}
-	imshow("Display", img);
-	imwrite("Test1Results.jpg", img);
-	waitKey();
 
 	return EXIT_SUCCESS;
 }

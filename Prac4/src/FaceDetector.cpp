@@ -277,8 +277,8 @@ namespace nl_uu_science_gmt
 		float currentScaleFactor = scaleFactor;
 		int depth = 1;
 
-		//Keep making layers until the model doesn't fit in the image anymore
-		while (normalised.cols >= m_model_size.width * currentScaleFactor && normalised.rows >= m_model_size.height * currentScaleFactor) {
+		//Keep making layers until the model doesn't fit in the image anymore; size of the model is multiplied to prevent senseless large models
+		while (normalised.cols >= 5 * m_model_size.width * currentScaleFactor && normalised.rows >= 5 * m_model_size.height * currentScaleFactor) {
 			Layer layer;
 			cv::Mat scaled;
 			cv::Size size((float)normalised.cols / currentScaleFactor, (float)normalised.rows / currentScaleFactor);

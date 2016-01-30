@@ -140,7 +140,7 @@ namespace nl_uu_science_gmt
 				m_img_fns_neg_meta.push_back(path.replace(path.replace(23, 10, "Annotations").size() - 3, 3, "xml"));
 			}
 
-			std::cout << "Skipped " << tooSmallCounter << (tooSmallCounter == 1 ? " image because it is" : " images because they are") << " too small to crop..." << std::endl;
+			std::cout << "Skipped " << tooSmallCounter << (tooSmallCounter == 1 ? " image because it is" : " images because they are") /*Yeah, I just did that*/ << " too small to crop..." << std::endl;
 			return offsets;
 		}
 		return std::vector<int>();
@@ -179,7 +179,7 @@ namespace nl_uu_science_gmt
 		params.degree = 1;
 		params.term_crit = cv::TermCriteria(CV_TERMCRIT_ITER, 100000, 1e-6);
 
-		std::cout << "Starting training... This might take a while..." << std::endl << "Get some coffee, go to the toilet, contemplate your day, finish your essay, run around the neighbourhood; Once you're done, maybe I will be too..." << std::endl;
+		std::cout << "Starting training... This might take a while..." << std::endl;
 		
 		//With differences of around 0.002, we found 0.008 to be the best value by running the code below
 		bestC = 0.008;
@@ -270,7 +270,27 @@ namespace nl_uu_science_gmt
 		}
 	}
 
-	void FaceDetector::createPyramid(const int scaleFactor, const cv::Mat &src, ImagePyramid &pyramid) {
+	void FaceDetector::createPyramid(const float scaleFactor, const cv::Mat &src, ImagePyramid &pyramid) {
+		float currentScaleFactor = scaleFactor;
+		int depth = 1;
 
+		//Keep making layers until the model doesn't fit in the image anymore
+		while (src.cols >= m_model_size.width * currentScaleFactor && src.rows >= m_model_size.height * currentScaleFactor) {
+			Layer layer;
+			cv::Mat scaled;
+			cv::Size size((float)src.cols / currentScaleFactor, (float)src.rows / currentScaleFactor);
+			cv::resize(src, scaled, size);
+			//Pyrdown limits the possible scales
+			//cv::pyrDown(src, scaled, size);
+
+			layer.factor = currentScaleFactor;
+			layer.l = depth;
+			layer.features = scaled;
+			//layer.pdf = dunno & todo;
+
+			pyramid.push_back(layer);
+			currentScaleFactor *= scaleFactor;
+			depth++;
+		}
 	}
 }

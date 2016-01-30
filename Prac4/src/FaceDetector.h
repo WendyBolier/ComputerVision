@@ -214,7 +214,7 @@ namespace nl_uu_science_gmt
 		 * OUTPUT: a vector of layers containing the scaled feature space representations of the input image,
 		 *             scaled down by a factor at each layer.
 		 */
-		void createPyramid(const int scaleFactor, const cv::Mat &src, ImagePyramid &pyramid);
+		void createPyramid(const float scaleFactor, const cv::Mat &src, ImagePyramid &pyramid);
 
 		/*
 		 * Train a Support Vector Machine given a set of positive and negative training data

@@ -186,6 +186,8 @@ int main(int argc, char** argv) {
 	SVMModel svmModel;
 	detector.svmFaces(trainingSamples, validationSamples, offsets, svmModel);
 
-	//detector.createPyramid();
+	ImagePyramid pyramid;
+	cv::Mat img = cv::imread("data\\Test\\img1.jpg");
+	detector.createPyramid(2, img, pyramid);
 	return EXIT_SUCCESS;
 }

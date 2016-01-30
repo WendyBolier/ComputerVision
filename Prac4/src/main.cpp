@@ -195,7 +195,7 @@ int main(int argc, char** argv) {
 
 	//Decide the PDF per layer
 	Size size = img.size();
-	const int threshold = 0.5;
+	const double threshold = 0; //todo: kies goede threshold
 	CandidateVec candidates;
 	for (int l = 0; l < pyramid.size(); l++) {
 		detector.convolve(svmModel, svm, pyramid[l]);
@@ -204,10 +204,12 @@ int main(int argc, char** argv) {
 	detector.nonMaximaSuppression(size, candidates);
 	
 	// draw final candidates on the image
+	img = imread("data\\Test\\img1.jpg");
 	for (int i = 0; i < candidates.size(); i++) {
-		rectangle(img, candidates[i].img_roi, (255, 0, 0), 1, 8, 0);
+		rectangle(img, candidates[i].img_roi, cv::Scalar(0, 255, 255), 1, 8, 0);
 	}
 	imshow("Display", img);
+	imwrite("Test1Results.jpg", img);
 	waitKey();
 
 	return EXIT_SUCCESS;

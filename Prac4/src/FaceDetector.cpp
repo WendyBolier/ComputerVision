@@ -310,7 +310,7 @@ namespace nl_uu_science_gmt
 			// Sum the responses in the PDF
 			pyramid_layer.pdf += response;
 		}
-		// Add the bias to the PDF (************* NOT 100% SURE YET IF THIS IS THE RIGHT BIAS *************) 
+		// Add the bias to the PDF
 		pyramid_layer.pdf += bias;
 	}
 
@@ -321,8 +321,9 @@ namespace nl_uu_science_gmt
 					Candidate c;
 					c.l = pyramid_layer.l;
 					c.ftr_roi = cv::Rect(j - (m_model_size.width / 2), i - (m_model_size.height / 2), m_model_size.width, m_model_size.height);
-					c.img_roi = cv::Rect(j - (m_model_size.width * pyramid_layer.factor) / 2, i - (m_model_size.height * pyramid_layer.factor) / 2,
-						                   m_model_size.width * pyramid_layer.factor, m_model_size.height * pyramid_layer.factor);
+					c.img_roi = cv::Rect(j * pyramid_layer.factor - (m_model_size.width * pyramid_layer.factor) / 2,
+										 i * pyramid_layer.factor - (m_model_size.height * pyramid_layer.factor) / 2,
+						                 m_model_size.width * pyramid_layer.factor, m_model_size.height * pyramid_layer.factor);
 					c.score = pyramid_layer.pdf.at<float>(i, j);
 
 					//Insert sorted by score
@@ -336,37 +337,42 @@ namespace nl_uu_science_gmt
 		}
 	}
 
-	void FaceDetector::nonMaximaSuppression(const cv::Size &image_size, CandidateVec &candidates)
-	{
-		// *** Even uitzoeken of dit niet overbodig is, want ik had ze al gesorteerd erin gestopt.. ***
+	void FaceDetector::nonMaximaSuppression(const cv::Size &image_size, CandidateVec &candidates) {
+		// We construct the candidates already sorted
+		/*
 		std::sort(candidates.begin(), candidates.end(), [](const Candidate &a, const Candidate &b) {
 			return a.score > b.score;
 		});
+		*/
 
 		cv::Mat scratch = cv::Mat::zeros(image_size, CV_8U);
 		const cv::Rect bounds = cv::Rect(0, 0, 0, 0) + image_size;
-		const double overlap = 5; // ***** we moeten hier nog een goede appropriate value kiezen ****
-		int keep = 0;
+		const double overlap = 0.5; // ***** todo: we moeten hier nog een goede appropriate value kiezen ****
+		unsigned int keep = 0;
 		for (size_t n = 0; n < candidates.size(); n++) {
 			cv::Rect box = candidates[n].img_roi & bounds;
-			int scratchCount = 0;
-			for (int i = box.x; i < box.width; i++) {
-				for (int j = box.y; j < box.height; j++) {
-					scratchCount += scratch.at<int>(i, j);
+			double scratchCount = 0;
+			for (int i = box.y; i < box.y + box.height; i++) {
+				for (int j = box.x; j < box.x + box.width; j++) {
+					scratchCount += scratch.at<unsigned char>(i, j);
 				}
 			}
-			if (scratchCount < overlap) {
-				for (int i = box.x; i < box.width; i++) {
-					for (int j = box.y; j < box.height; j++) {
-						scratch.at<int>(i, j) = 1;
+			// If not overlapping more than overlap, we keep this candidate
+			if (scratchCount / (box.width * box.height) < overlap) {
+				for (int i = box.y; i < box.y + box.height; i++) {
+					for (int j = box.x; j < box.x + box.width; j++) {
+						scratch.at<unsigned char>(i, j) = 1;
 					}
 				}
+				//std::cout << box << " kept" << std::endl;
 				keep++;
 			}
 			else {
 				candidates.erase(candidates.begin() + n);
+				//std::cout << box << " discarded" << std::endl;
+				n--;
 			}
 		}
-		candidates.resize(keep);
+		std::cout << keep << " possible faces found..." << std::endl;
 	}
 }

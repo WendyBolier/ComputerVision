@@ -253,8 +253,7 @@ namespace nl_uu_science_gmt
 		 *             such that the ROI has the correct detection size with regard to the pyramid
 		 *             layer the detection was found at.
 		 */
-		void positionalContent(
-			const Layer &pyramid_layer, const double threshold, CandidateVec &candidates);
+		void positionalContent(const Layer &pyramid_layer, const double threshold, CandidateVec &candidates);
 
 		/*
 		 * Non-Maxima-Suppression is a technique to filter out lower scoring candidates that overlap by
@@ -266,8 +265,7 @@ namespace nl_uu_science_gmt
 		 *                    each other, if the overlap (Union Over Intersection) is over a set threshold,
 		 *                    only the candidate with the highest score is retained
 		 */
-		void nonMaximaSuppression(
-			const cv::Size &image_size, CandidateVec &candidates);
+		void nonMaximaSuppression(const cv::Size &image_size, CandidateVec &candidates);
 
 		/* Getter for training paths vector
 		 * OUTPUT:  Vector of training paths

@@ -218,6 +218,7 @@ int main(int argc, char** argv) {
 		if (img.cols > 900 || img.rows > 900) {
 			cv::resize(img, img, cv::Size(img.cols / 2, img.rows / 2));
 		}
+		std::cout << "Showing " << pathSegment << ". Press any key to continue..." << std::endl;
 		imshow("Display", img);
 		waitKey();
 	}

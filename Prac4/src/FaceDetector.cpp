@@ -248,15 +248,16 @@ namespace nl_uu_science_gmt
 
 		std::cout << "The best value for C is " << bestC << std::endl;
 
+		//Visualise the weights vector
 		cv::Mat reshapedWeights = model.weights.reshape(1, m_model_size.height);
 		cv::imshow("Display", (reshapedWeights * 1.6) + 0.6);
 		std::cout << std::endl << "You can now view the visualisation of W. Press any key to continue..." << std::endl;
-		cv::waitKey();
 		{
 			cv::Mat temp = ((reshapedWeights * 1.6) + 0.6) * 255;
 			temp.convertTo(temp, CV_8U);
 			cv::imwrite("FaceReconstruction.png", temp);
 		}
+		cv::waitKey();
 
 		//Save the filter engine
 		int channels = 1; // Pixel model
@@ -338,7 +339,7 @@ namespace nl_uu_science_gmt
 	}
 
 	void FaceDetector::nonMaximaSuppression(const cv::Size &image_size, CandidateVec &candidates) {
-		// We construct the candidates already sorted
+		// We already sort the candidates on construction
 		/*
 		std::sort(candidates.begin(), candidates.end(), [](const Candidate &a, const Candidate &b) {
 			return a.score > b.score;
@@ -347,7 +348,7 @@ namespace nl_uu_science_gmt
 
 		cv::Mat scratch = cv::Mat::zeros(image_size, CV_8U);
 		const cv::Rect bounds = cv::Rect(0, 0, 0, 0) + image_size;
-		const double overlap = 0.5; // ***** todo: we moeten hier nog een goede appropriate value kiezen ****
+		const double overlap = 0.5;
 		unsigned int keep = 0;
 		for (size_t n = 0; n < candidates.size(); n++) {
 			cv::Rect box = candidates[n].img_roi & bounds;

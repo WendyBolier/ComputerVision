@@ -16,6 +16,7 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include "FaceDetector.h"
+#include "MySVM.h"
 
 using namespace nl_uu_science_gmt;
 using namespace cv;
@@ -183,27 +184,30 @@ int main(int argc, char** argv) {
 	std::vector<int> offsets = detector.load(trainingSamples, validationSamples, true, true);
 
 	//Train the model
+	MySVM svm;
 	SVMModel svmModel;
-	detector.svmFaces(trainingSamples, validationSamples, offsets, svmModel);
+	detector.svmFaces(trainingSamples, validationSamples, svm, offsets, svmModel);
 
+	//Create the pyramid from the source image
 	ImagePyramid pyramid;
-	cv::Mat img = cv::imread("data\\Test\\img1.jpg");
+	cv::Mat img = cv::imread("data\\Test\\img1.jpg", CV_LOAD_IMAGE_GRAYSCALE);
+	detector.createPyramid(1.5, img, pyramid);
+
+	//Decide the PDF per layer
 	Size size = img.size();
-	const int threshold = 2; // ****** geen idee wat hier de threshold moet zijn? nog te bepalen dus! ***** 
+	const int threshold = 0.5;
 	CandidateVec candidates;
-	detector.createPyramid(2, img, pyramid);
-	for (int l = 0; l < pyramid.size(); l++)
-	{
-		detector.convolve(svmModel, pyramid[l]);
+	for (int l = 0; l < pyramid.size(); l++) {
+		detector.convolve(svmModel, svm, pyramid[l]);
 		detector.positionalContent(pyramid[l], threshold, candidates);
 	}
 	detector.nonMaximaSuppression(size, candidates);
 	
 	// draw final candidates on the image
-	for (int i; i < candidates.size(); i++) {
+	for (int i = 0; i < candidates.size(); i++) {
 		rectangle(img, candidates[i].img_roi, (255, 0, 0), 1, 8, 0);
 	}
-	imshow("Display window", img);
+	imshow("Display", img);
 	waitKey();
 
 	return EXIT_SUCCESS;

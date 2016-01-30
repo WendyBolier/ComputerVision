@@ -214,7 +214,7 @@ namespace nl_uu_science_gmt
 		 * OUTPUT: a vector of layers containing the scaled feature space representations of the input image,
 		 *             scaled down by a factor at each layer.
 		 */
-		void createPyramid(const float scaleFactor, const cv::Mat &src, ImagePyramid &pyramid);
+		void createPyramid(const float scaleFactor, cv::Mat &src, ImagePyramid &pyramid);
 
 		/*
 		 * Train a Support Vector Machine given a set of positive and negative training data
@@ -226,7 +226,7 @@ namespace nl_uu_science_gmt
 		 * OUTPUT: a model containing the trained filter representations for each channel as a cv::FilterEngine,
 		 *             as well as the training scores (see struct SVMModel)
 		 */
-		void svmFaces(const cv::Mat &trainingData, const cv::Mat &validationData, std::vector<int> offsets, SVMModel &model);
+		void svmFaces(const cv::Mat &trainingData, const cv::Mat &validationData, MySVM &svm, std::vector<int> offsets, SVMModel &model);
 
 		/*
 		 * Discrete Matrix Convolution of a set of filters with a feature descriptor. This should be done by
@@ -241,8 +241,7 @@ namespace nl_uu_science_gmt
 		 * OUTPUT: response_layer: response_layer: a response layer containing the response result as the sum of the
 		 *             convolution operations of each channel on the given input layer.
 		 */
-		void convolve(
-			SVMModel &model, Layer &pyramid_layer);
+		void convolve(SVMModel &model, MySVM &svm, Layer &pyramid_layer);
 
 		/*
 		 * Converts the Response Matrix to a set of scored Candidate detections, sorted by score (good -> bad)

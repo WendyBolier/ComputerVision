@@ -157,7 +157,7 @@ namespace nl_uu_science_gmt
 		return features;
 	}
 
-	void FaceDetector::svmFaces(const cv::Mat &trainingData, const cv::Mat &validationData, std::vector<int> offsets, SVMModel &model) {
+	void FaceDetector::svmFaces(const cv::Mat &trainingData, const cv::Mat &validationData, MySVM &svm, std::vector<int> offsets, SVMModel &model) {
 		float bestC;
 		double accuracyTraining, accuracyValidation, accuracyDifference = 100000;
 		cv::Mat trainResults, validationResults;
@@ -191,7 +191,6 @@ namespace nl_uu_science_gmt
 #else
 		for (params.C = bestC; params.C == bestC; params.C++) {
 #endif
-			MySVM svm;
 			std::cout << "Training with C = " << params.C << "... ";
 			svm.train(trainingData, trainingLabels, cv::Mat(), cv::Mat(), params);
 			std::cout << "Training complete!" << std::endl;
@@ -251,7 +250,9 @@ namespace nl_uu_science_gmt
 
 		cv::Mat reshapedWeights = model.weights.reshape(1, m_model_size.height);
 		cv::imshow("Display", (reshapedWeights * 1.6) + 0.6);
-		cv::waitKey(); {
+		std::cout << std::endl << "You can now view the visualisation of W. Press any key to continue..." << std::endl;
+		cv::waitKey();
+		{
 			cv::Mat temp = ((reshapedWeights * 1.6) + 0.6) * 255;
 			temp.convertTo(temp, CV_8U);
 			cv::imwrite("FaceReconstruction.png", temp);
@@ -262,6 +263,7 @@ namespace nl_uu_science_gmt
 		MatVec model_channels;
 		cv::split(reshapedWeights, model_channels);
 		int type = reshapedWeights.depth();
+		int actualtype = reshapedWeights.type();
 
 		for (size_t m = 0; m < model_channels.size(); m++) {
 			auto channel_engine = cv::createLinearFilter(type, type, model_channels[m], cv::Point(-1, -1), 0, cv::BORDER_CONSTANT, -1, cv::Scalar(0, 0, 0, 0));
@@ -269,18 +271,20 @@ namespace nl_uu_science_gmt
 		}
 	}
 
-	void FaceDetector::createPyramid(const float scaleFactor, const cv::Mat &src, ImagePyramid &pyramid) {
+	void FaceDetector::createPyramid(const float scaleFactor, cv::Mat &src, ImagePyramid &pyramid) {
+		cv::Mat normalised = normalize(src);
+		normalised = normalised.reshape(1, src.rows);
 		float currentScaleFactor = scaleFactor;
 		int depth = 1;
 
 		//Keep making layers until the model doesn't fit in the image anymore
-		while (src.cols >= m_model_size.width * currentScaleFactor && src.rows >= m_model_size.height * currentScaleFactor) {
+		while (normalised.cols >= m_model_size.width * currentScaleFactor && normalised.rows >= m_model_size.height * currentScaleFactor) {
 			Layer layer;
 			cv::Mat scaled;
-			cv::Size size((float)src.cols / currentScaleFactor, (float)src.rows / currentScaleFactor);
-			cv::resize(src, scaled, size);
-			//Pyrdown limits the possible scales
+			cv::Size size((float)normalised.cols / currentScaleFactor, (float)normalised.rows / currentScaleFactor);
+			//pyrDown limits the possible scales
 			//cv::pyrDown(src, scaled, size);
+			cv::resize(normalised, scaled, size);
 
 			layer.factor = currentScaleFactor;
 			layer.l = depth;
@@ -292,15 +296,16 @@ namespace nl_uu_science_gmt
 		}
 	}
 
-	void FaceDetector::convolve(SVMModel &model, Layer &pyramid_layer)
-	{
+	void FaceDetector::convolve(SVMModel &model, MySVM &svm, Layer &pyramid_layer) {
 		const auto roi = cv::Rect(0, 0, -1, -1); // convolve the full image
 		const auto offset = cv::Point(0, 0);
-		MySVM svm;
-		const double bias = svm.getDecisionFunc()->rho;
-		Layer response;
+		CvSVMDecisionFunc *decision = svm.getDecisionFunc();
+		const double bias = decision->rho;
+		pyramid_layer.pdf = cv::Mat(pyramid_layer.features.rows, pyramid_layer.features.cols, pyramid_layer.features.type(), 0.0);
 		for (int c = 0; c < model.engine.size(); c++) {
 			cv::Mat response;
+			response.create(pyramid_layer.features.size(), pyramid_layer.features.type());
+			int type = pyramid_layer.features.depth();
 			model.engine[c]->apply(pyramid_layer.features, response, roi, offset, true);
 			// Sum the responses in the PDF
 			pyramid_layer.pdf += response;
@@ -309,20 +314,20 @@ namespace nl_uu_science_gmt
 		pyramid_layer.pdf += bias;
 	}
 
-	void FaceDetector::positionalContent(const Layer &pyramid_layer, const double threshold, CandidateVec &candidates)
-	{
-		for (int i = 0; i < pyramid_layer.pdf.cols; i++) {
-			for (int j = 0; j < pyramid_layer.pdf.rows; j++) {
-				if (pyramid_layer.pdf.at<double>(i, j) > threshold) {
+	void FaceDetector::positionalContent(const Layer &pyramid_layer, const double threshold, CandidateVec &candidates) {
+		for (int i = 0; i < pyramid_layer.pdf.rows; i++) {
+			for (int j = 0; j < pyramid_layer.pdf.cols; j++) {
+				if (pyramid_layer.pdf.at<float>(i, j) > threshold) {
 					Candidate c;
 					c.l = pyramid_layer.l;
-					c.ftr_roi = cv::Rect(i - (m_model_size.width / 2), j + (m_model_size.height / 2), m_model_size.width, m_model_size.height);
-					c.img_roi = cv::Rect((i - (m_model_size.width / 2))*pyramid_layer.factor, (j + (m_model_size.height*pyramid_layer.factor)),
-						                   m_model_size.width*pyramid_layer.factor, m_model_size.height*pyramid_layer.factor);
-					c.score = pyramid_layer.pdf.at<double>(i, j);
+					c.ftr_roi = cv::Rect(j - (m_model_size.width / 2), i - (m_model_size.height / 2), m_model_size.width, m_model_size.height);
+					c.img_roi = cv::Rect(j - (m_model_size.width * pyramid_layer.factor) / 2, i - (m_model_size.height * pyramid_layer.factor) / 2,
+						                   m_model_size.width * pyramid_layer.factor, m_model_size.height * pyramid_layer.factor);
+					c.score = pyramid_layer.pdf.at<float>(i, j);
 
+					//Insert sorted by score
 					int count = 0;
-					while (candidates[count].score > c.score) {
+					while (candidates.size() > count && candidates[count].score > c.score) {
 						count++;
 					}
 					candidates.insert(candidates.begin() + count, c);

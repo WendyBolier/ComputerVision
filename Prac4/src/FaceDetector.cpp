@@ -248,7 +248,9 @@ namespace nl_uu_science_gmt
 			}
 		}
 
+#ifdef _FindBestC
 		std::cout << "The best value for C is " << bestC << std::endl;
+#endif
 
 		//Visualise the weights vector
 		cv::Mat reshapedWeights = model.weights.reshape(1, m_model_size.height);

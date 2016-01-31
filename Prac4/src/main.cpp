@@ -20,7 +20,7 @@
 
 
 /* Toggles */
-#define _TestVariables
+//#define _TestVariables
 
 
 using namespace nl_uu_science_gmt;
@@ -185,14 +185,14 @@ int main(int argc, char** argv) {
 	cv::Rect modelWindow(76, 90, 100, 100);
 
 	int modelSize = 20;
-	double threshold = 1;
-	float scaleFactor = 1.5;
+	double threshold = 0;
+	float scaleFactor = 1.3;
 
 #ifdef _TestVariables
 	cv::FileStorage variableTestResults("VariableResults.xml", cv::FileStorage::WRITE);
-	for (modelSize = 10; modelSize <= 40; modelSize += 10) {
-		for (threshold = 0; threshold <= 2; threshold += 0.5) {
-			for (scaleFactor = 1.5; scaleFactor <= 3; scaleFactor += 0.5) {
+	for (modelSize = 10; modelSize <= 20; modelSize += 5) {
+		for (threshold = -1; threshold <= 2; threshold += 0.25) {
+			for (scaleFactor = 1.1; scaleFactor <= 1.5; scaleFactor += 0.25) {
 				variableTestResults << "modelSize" << modelSize;
 				variableTestResults << "threshold" << std::to_string(threshold);
 				variableTestResults << "scaleFactor" << std::to_string(scaleFactor);

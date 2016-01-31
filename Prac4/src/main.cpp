@@ -18,6 +18,11 @@
 #include "FaceDetector.h"
 #include "MySVM.h"
 
+
+/* Toggles */
+#define _TestVariables
+
+
 using namespace nl_uu_science_gmt;
 using namespace cv;
 namespace fs = boost::filesystem;
@@ -174,54 +179,125 @@ int main(int argc, char** argv) {
 		return EXIT_FAILURE;
 	}
 
+#ifndef _TestVariables
 	cv::namedWindow("Display");
+#endif
 	cv::Rect modelWindow(76, 90, 100, 100);
-	cv::Size resize(20, 20);
-	FaceDetector detector(pathPositivesToUse, pathUsableNegative, resize, 1, modelWindow);
 
-	cv::Mat trainingSamples, validationSamples;
-	//Load the images, normalized, and get the negative offsets in the training and validation sets, respectively
-	std::vector<int> offsets = detector.load(trainingSamples, validationSamples, true, true);
+	int modelSize = 20;
+	double threshold = 1;
+	float scaleFactor = 1.5;
 
-	//Train the model
-	MySVM svm;
-	SVMModel svmModel;
-	detector.svmFaces(trainingSamples, validationSamples, svm, offsets, svmModel);
+#ifdef _TestVariables
+	cv::FileStorage variableTestResults("VariableResults.xml", cv::FileStorage::WRITE);
+	for (modelSize = 10; modelSize <= 40; modelSize += 10) {
+		for (threshold = 0; threshold <= 2; threshold += 0.5) {
+			for (scaleFactor = 1.5; scaleFactor <= 3; scaleFactor += 0.5) {
+				variableTestResults << "modelSize" << modelSize;
+				variableTestResults << "threshold" << std::to_string(threshold);
+				variableTestResults << "scaleFactor" << std::to_string(scaleFactor);
+				std::cout << "Testing modelSize = " << modelSize << ", threshold = " << threshold << ", scaleFactor = " << scaleFactor << std::endl;
+#endif
 
-	for (int imgidx = 1; imgidx <= 7; imgidx++) {
-		//There is no img3.jpg
-		if (imgidx == 3) imgidx++;
-		std::string pathSegment = imgidx == 7 ? "-test.png" : std::to_string(imgidx) + ".jpg";
+				cv::Size resize(modelSize, modelSize);
+				FaceDetector detector(pathPositivesToUse, pathUsableNegative, resize, 1, modelWindow);
 
-		//Create the pyramid from the source image
-		ImagePyramid pyramid;
-		cv::Mat img = cv::imread(std::string("data\\Test\\img") + pathSegment, CV_LOAD_IMAGE_GRAYSCALE);
-		detector.createPyramid(1.5, img, pyramid);
+				cv::Mat trainingSamples, validationSamples;
+				//Load the images, normalized, and get the negative offsets in the training and validation sets, respectively
+				std::vector<int> offsets = detector.load(trainingSamples, validationSamples, true, true);
 
-		//Decide the PDF per layer
-		Size size = img.size();
-		const double threshold = 1; //todo: kies goede threshold
-		CandidateVec candidates;
-		for (int l = 0; l < pyramid.size(); l++) {
-			detector.convolve(svmModel, svm, pyramid[l]);
-			detector.positionalContent(pyramid[l], threshold, candidates);
+				//Train the model
+				MySVM svm;
+				SVMModel svmModel;
+				detector.svmFaces(trainingSamples, validationSamples, svm, offsets, svmModel);
+
+				int finalImage = 7;
+
+#ifdef _TestVariables
+				finalImage = 6;
+#endif
+				for (int imgidx = 1; imgidx <= finalImage; imgidx++) {
+					//There is no img3.jpg
+					if (imgidx == 3) imgidx++;
+					std::string pathSegment = imgidx == 7 ? "-test.png" : std::to_string(imgidx) + ".jpg";
+
+					//Create the pyramid from the source image
+					ImagePyramid pyramid;
+					cv::Mat img = cv::imread(std::string("data\\Test\\img") + pathSegment, CV_LOAD_IMAGE_GRAYSCALE);
+					detector.createPyramid(scaleFactor, img, pyramid);
+
+					//Decide the PDF per layer
+					Size size = img.size();
+					CandidateVec candidates;
+					for (int l = 0; l < pyramid.size(); l++) {
+						detector.convolve(svmModel, svm, pyramid[l]);
+						detector.positionalContent(pyramid[l], threshold, candidates);
+					}
+					detector.nonMaximaSuppression(size, candidates);
+
+					// draw final candidates on the image
+					img = imread(std::string("data\\Test\\img") + pathSegment);
+					for (int i = 0; i < candidates.size(); i++) {
+						rectangle(img, candidates[i].img_roi, cv::Scalar(0, 255, 255), 1, 8, 0);
+					}
+					imwrite(std::string("TestResults") + pathSegment, img);
+
+					if (img.cols > 900 || img.rows > 900) {
+						cv::resize(img, img, cv::Size(img.cols / 2, img.rows / 2));
+					}
+
+					//The last one doesn't have ground truth data
+					if (imgidx != 7) {
+						//Find true/false positives
+						FileStorage fs(std::string("data\\Test\\img") + pathSegment.replace(pathSegment.size() - 3, 3, "xml"), FileStorage::READ);
+						vector<int> groundTruth;
+						fs["ground_truth"] >> groundTruth;
+						int truePositives = 0, falseNegatives = 0, guesses = candidates.size();
+
+						for (int i = 0; i < groundTruth.size(); i += 4) {
+							bool faceFound = false;
+							cv::Rect faceBox(groundTruth[i], groundTruth[i + 1], groundTruth[i + 2], groundTruth[i + 3]);
+							for (int c = 0; c < candidates.size(); c++) {
+								cv::Rect box = candidates[c].img_roi & faceBox;
+								//Check whether the union/overlap between our match and the ground truth match is a big enoug part of both
+								//We'll call that a TP
+								if (box.area() > 0.5 * candidates[c].img_roi.area() & box.area() > 0.5 * faceBox.area()) {
+									truePositives++;
+									faceFound = true;
+									//We stop checking against a candidate if it has been a TP for a match already
+									candidates.erase(candidates.begin() + c);
+									break;
+								}
+							}
+							if (!faceFound) {
+								falseNegatives++;
+							}
+						}
+						std::cout << "Out of " << (falseNegatives + truePositives) << " positives, we found " << truePositives << " with a total of " << guesses << " guesses." << std::endl;
+
+#ifdef _TestVariables
+						// Write precision, recall and the F-score for the current configuration
+						float precision = (float)truePositives / guesses;
+						float recall = (float)truePositives / (truePositives + falseNegatives);
+						float fScore = 2 * precision * recall / (precision + recall);
+						variableTestResults << "Precision" + std::to_string(imgidx) << std::to_string(precision);
+						variableTestResults << "Recall" + std::to_string(imgidx) << std::to_string(recall);
+						variableTestResults << "F-score" + std::to_string(imgidx) << std::to_string(fScore);
+#endif
+					}
+
+#ifndef _TestVariables
+					std::cout << "Showing img" << pathSegment.replace(pathSegment.size() - 3, 3, "jpg") << ". Press any key to continue..." << std::endl;
+					imshow("Display", img);
+					waitKey();
+#endif
+				}
+
+#ifdef _TestVariables
+			}
 		}
-		detector.nonMaximaSuppression(size, candidates);
-
-		// draw final candidates on the image
-		img = imread(std::string("data\\Test\\img") + pathSegment);
-		for (int i = 0; i < candidates.size(); i++) {
-			rectangle(img, candidates[i].img_roi, cv::Scalar(0, 255, 255), 1, 8, 0);
-		}
-		imwrite(std::string("TestResults") + pathSegment, img);
-		
-		if (img.cols > 900 || img.rows > 900) {
-			cv::resize(img, img, cv::Size(img.cols / 2, img.rows / 2));
-		}
-		std::cout << "Showing " << pathSegment << ". Press any key to continue..." << std::endl;
-		imshow("Display", img);
-		waitKey();
 	}
+#endif
 
 	return EXIT_SUCCESS;
 }

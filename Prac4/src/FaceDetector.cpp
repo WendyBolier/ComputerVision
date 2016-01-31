@@ -5,9 +5,6 @@
 *      Authors : Erik and Wendy
 */
 
-/* Toggles */
-//#define _FindBestC
-
 #include <iostream>
 
 #include <boost/filesystem.hpp>
@@ -18,6 +15,11 @@
 
 #include "FaceDetector.h"
 #include "MySVM.h"
+
+
+/* Toggles */
+//#define _FindBestC
+
 
 namespace fs = boost::filesystem;
 
@@ -250,14 +252,13 @@ namespace nl_uu_science_gmt
 
 		//Visualise the weights vector
 		cv::Mat reshapedWeights = model.weights.reshape(1, m_model_size.height);
-		cv::imshow("Display", (reshapedWeights * 1.6) + 0.6);
-		std::cout << std::endl << "You can now view the visualisation of W. Press any key to continue..." << std::endl;
+		//cv::imshow("Display", (reshapedWeights * 1.6) + 0.6);
 		{
 			cv::Mat temp = ((reshapedWeights * 1.6) + 0.6) * 255;
 			temp.convertTo(temp, CV_8U);
 			cv::imwrite("FaceReconstruction.png", temp);
 		}
-		cv::waitKey();
+		std::cout << std::endl << "The visualisation of W has been saved to the project folder..." << std::endl;
 
 		//Save the filter engine
 		int channels = 1; // Pixel model
@@ -374,6 +375,5 @@ namespace nl_uu_science_gmt
 				n--;
 			}
 		}
-		std::cout << keep << " possible faces found..." << std::endl;
 	}
 }

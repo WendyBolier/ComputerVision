@@ -246,13 +246,18 @@ int main(int argc, char** argv) {
 						cv::resize(img, img, cv::Size(img.cols / 2, img.rows / 2));
 					}
 
+					int guesses = candidates.size();
+					if (imgidx == 7) {
+						std::cout << "Found " << guesses << " Santa candidates...";
+					}
+
 					//The last one doesn't have ground truth data
 					if (imgidx != 7) {
 						//Find true/false positives
 						FileStorage fs(std::string("data\\Test\\img") + pathSegment.replace(pathSegment.size() - 3, 3, "xml"), FileStorage::READ);
 						vector<int> groundTruth;
 						fs["ground_truth"] >> groundTruth;
-						int truePositives = 0, falseNegatives = 0, guesses = candidates.size();
+						int truePositives = 0, falseNegatives = 0;
 
 						for (int i = 0; i < groundTruth.size(); i += 4) {
 							bool faceFound = false;
